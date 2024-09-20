@@ -87,18 +87,18 @@ class MotorGrafico:
 
         glPopMatrix()
 
-    def desenhar_trajetoria(self, corpo: CorpoCeleste) -> None:
+    def desenhar_trail(self, corpo: CorpoCeleste) -> None:
         """
-        Desenha a trajetória de um corpo celeste.
+        Desenha o rastro da trajetória do corpo celeste.
 
-        :param corpo: Instância de CorpoCeleste cuja trajetória será desenhada.
+        :param corpo: Instância de CorpoCeleste cujo rastro será desenhado.
         """
-        if len(corpo.trajetoria) < 2:
-            return  # Não há trajetória suficiente para desenhar
+        if len(corpo.trail) < 2:
+            return  # Não há pontos suficientes para desenhar o rastro
 
-        glColor3f(*corpo.cor)  # Usa a mesma cor do corpo para a trajetória
+        glColor3f(*corpo.cor)  # Use a mesma cor do corpo para o rastro
         glBegin(GL_LINE_STRIP)
-        for pos in corpo.trajetoria:
+        for pos in corpo.trail:
             pos_escalada = pos * self.fator_escala
             glVertex3f(*pos_escalada)
         glEnd()
@@ -117,7 +117,6 @@ class MotorGrafico:
 
         for corpo in corpos:
             corpo.desenhar(self)
-            self.desenhar_trajetoria(corpo)
 
         pygame.display.flip()
 

@@ -17,8 +17,8 @@ class Foguete(CorpoCeleste):
         velocidade: list,
         raio: float,
         cor: Tuple[float, float, float],
-        rotacao_velocidade: float = 0.0,  # Rotação em graus por segundo
-        inclinacao: float = 0.0  # Inclinação orbital em graus
+        inclinacao: float = 0.0,  # Inclinação em graus
+        rotacao_velocidade: float = 0.0  # Rotação em graus por segundo
     ):
         """
         Inicializa uma instância de Foguete.
@@ -29,10 +29,10 @@ class Foguete(CorpoCeleste):
         :param velocidade: Velocidade no espaço 3D como uma lista [vx, vy, vz] (em km/s).
         :param raio: Raio do foguete para renderização (em km).
         :param cor: Cor do foguete como tupla (R, G, B) com valores entre 0.0 e 1.0.
+        :param inclinacao: Inclinação da órbita em graus.
         :param rotacao_velocidade: Velocidade de rotação em graus por segundo.
-        :param inclinacao: Inclinação orbital em graus.
         """
-        super().__init__(nome, massa, posicao, velocidade, raio, cor, rotacao_velocidade, inclinacao)
+        super().__init__(nome, massa, posicao, velocidade, raio, cor, inclinacao, rotacao_velocidade)
         # Propriedades específicas do foguete podem ser adicionadas aqui
         # Por exemplo, combustível, motor, etc.
 

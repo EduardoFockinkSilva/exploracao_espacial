@@ -7,7 +7,6 @@ from motor_fisico import MotorFisico
 from motor_grafico import MotorGrafico
 import pygame
 
-
 def main():
     # Inicializa os motores
     motor_grafico = MotorGrafico()
@@ -15,7 +14,7 @@ def main():
 
     motor_fisico = MotorFisico()
 
-    # Cria instâncias de CorpoCeleste com inclinações diferentes
+    # Cria instâncias de CorpoCeleste com inclinação
     sol = CorpoCeleste(
         nome='Sol',
         massa=1.989e30,  # Massa do Sol em kg
@@ -23,8 +22,8 @@ def main():
         velocidade=[0.0, 0.0, 0.0],  # Velocidade inicial em km/s
         raio=696340.0,  # Raio do Sol em km
         cor=(1.0, 1.0, 0.0),  # Cor amarela
-        rotacao_velocidade=10.0,  # Rotação de 10 graus por segundo
-        inclinacao=0.0  # Inclinação orbital do Sol (não se aplica, mas mantido para consistência)
+        inclinacao=0.0,  # Sem inclinação
+        rotacao_velocidade=10.0  # Rotação de 10 graus por segundo
     )
 
     terra = CorpoCeleste(
@@ -34,11 +33,11 @@ def main():
         velocidade=[0.0, 29.78, 0.0],  # Velocidade orbital em km/s
         raio=6371.0,  # Raio da Terra em km
         cor=(0.0, 0.0, 1.0),  # Cor azul
-        rotacao_velocidade=30.0,  # Rotação de 30 graus por segundo
-        inclinacao=45.0  # Inclinação orbital da Terra em graus
+        inclinacao=45.0,  # Inclinação em graus
+        rotacao_velocidade=30.0  # Rotação de 30 graus por segundo
     )
 
-    # Cria instância do Foguete com inclinação
+    # Cria instância do Foguete
     foguete = Foguete(
         nome='Foguete',
         massa=50000.0,  # Massa do foguete em kg
@@ -46,8 +45,8 @@ def main():
         velocidade=[0.0, 29.78 + 7.8, 0.0],  # Velocidade orbital mais 7.8 km/s para órbita baixa
         raio=2.0,  # Raio do foguete em km (ajustado para visibilidade)
         cor=(1.0, 0.0, 0.0),  # Cor vermelha
-        rotacao_velocidade=100.0,  # Rotação rápida para efeito visual
-        inclinacao=5.0  # Inclinação orbital do foguete em graus
+        inclinacao=7.0,  # Mesma inclinação da Terra para manter na mesma órbita
+        rotacao_velocidade=100.0  # Rotação rápida para efeito visual
     )
 
     # Lista de corpos para renderização
@@ -73,7 +72,6 @@ def main():
 
     pygame.quit()
     sys.exit()
-
 
 if __name__ == '__main__':
     main()
