@@ -1,139 +1,165 @@
-# motor_grafico.py
-
 import pygame
+import numpy as np
+from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from typing import List
-from corpo_celeste import CorpoCeleste
-import numpy as np
-
+from simulacao.foguete import Foguete
+from simulacao.corpo_celeste import CorpoCeleste
 
 class MotorGrafico:
     """
-    Classe responsável pela renderização gráfica em 3D.
+    Classe responsável pela renderização gráfica dos corpos celestes.
     """
 
-    def __init__(self, largura: int = 1920, altura: int = 1080):
+    def __init__(self, largura: int = 800, altura: int = 600, titulo: str = "Simulação do Sistema Solar"):
+        """
+        Inicializa o motor gráfico e configura a janela de exibição.
+        """
         self.largura = largura
         self.altura = altura
-        self.janela = None
-        self.camera_posicao = np.array([0.0, 0.0, 200.0], dtype=float)  # Posição inicial da câmera em unidades OpenGL
-        self.fator_escala = 1e-7  # Escala para converter km para unidades OpenGL
-        self.fator_tamanho = 1e-5  # Escala para converter km para o tamanho visual dos objetos
+        self.titulo = titulo
+        self._inicializar_janela()
+        self._configurar_openGL()
+        self.clock = pygame.time.Clock()
+        self.fps = 60  # Taxa de quadros por segundo
 
-    def inicializar(self) -> None:
+    def _inicializar_janela(self) -> None:
         """
-        Inicializa o contexto gráfico e configura o OpenGL.
+        Inicializa a janela de exibição usando pygame.
         """
-        pygame.init()
-        self.janela = pygame.display.set_mode((self.largura, self.altura), pygame.DOUBLEBUF | pygame.OPENGL)
-        pygame.display.set_caption('Simulador do Sistema Solar')
+        pygame.display.set_mode((self.largura, self.altura), DOUBLEBUF | OPENGL)
+        pygame.display.set_caption(self.titulo)
 
+    def _configurar_openGL(self) -> None:
+        """
+        Configura os parâmetros iniciais do OpenGL.
+        """
         glEnable(GL_DEPTH_TEST)
-        glEnable(GL_COLOR_MATERIAL)
-        glEnable(GL_NORMALIZE)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-
-        # Configura a luz
-        glLightfv(GL_LIGHT0, GL_POSITION, (0, 0, 0, 1))  # Luz posicionada na origem (Sol)
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (0.1, 0.1, 0.1, 1.0))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
-
-        # Configura a projeção
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(45, (self.largura / self.altura), 0.1, 1000.0)
-        glMatrixMode(GL_MODELVIEW)
-
-        # Define a cor de fundo
+        glDepthFunc(GL_LEQUAL)
         glClearColor(0.0, 0.0, 0.0, 1.0)  # Fundo preto
 
-    def atualizar_camera(self) -> None:
-        """
-        Atualiza a posição e orientação da câmera.
-        """
+        # Configuração de projeção ajustada
+        glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluLookAt(
-            self.camera_posicao[0], self.camera_posicao[1], self.camera_posicao[2],  # Posição da câmera
-            0.0, 0.0, 0.0,   # Ponto para onde a câmera está olhando (origem)
-            0.0, 1.0, 0.0    # Vetor "up"
-        )
+        gluPerspective(45, (self.largura / self.altura), 1e9, 1e13)
+        glMatrixMode(GL_MODELVIEW)
+
+    def atualizar_tela(self) -> None:
+        """
+        Atualiza a tela e controla a taxa de quadros.
+        """
+        pygame.display.flip()
+        self.clock.tick(self.fps)
+
+    def limpar_tela(self) -> None:
+        """
+        Limpa o buffer de cor e profundidade.
+        """
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+    def desenhar_corpos(self, corpos: List[CorpoCeleste]) -> None:
+        """
+        Renderiza todos os corpos celestes na tela.
+        """
+        for corpo in corpos:
+            self.desenhar_corpo(corpo)
+            self.desenhar_rastro(corpo)
 
     def desenhar_corpo(self, corpo: CorpoCeleste) -> None:
         """
-        Desenha um corpo celeste na cena.
-
-        :param corpo: Instância de CorpoCeleste a ser desenhada.
+        Desenha um corpo celeste ou foguete.
         """
         glPushMatrix()
-        posicao_escalada = corpo.posicao * self.fator_escala
-        glTranslatef(*posicao_escalada)
 
-        # Aplica a rotação
-        glRotatef(corpo.rotacao_atual, 0, 1, 0)  # Rotaciona em torno do eixo Y
+        # Aplica a posição do corpo
+        glTranslatef(*corpo.posicao)
 
+        # Verifica se é um foguete para aplicar a orientação
+        if isinstance(corpo, Foguete):
+            # Calcula o ângulo e o eixo de rotação a partir da orientação
+            orientacao_padrao = np.array([0.0, 1.0, 0.0])  # Orientação padrão
+            eixo_rotacao = np.cross(orientacao_padrao, corpo.orientacao)
+            angulo = np.degrees(np.arccos(np.dot(orientacao_padrao, corpo.orientacao)))
+            if np.linalg.norm(eixo_rotacao) != 0:
+                glRotatef(angulo, *eixo_rotacao)
         # Define a cor do corpo
-        glColor3f(*corpo.cor)
+        glColor3ub(*corpo.cor)
 
-        # Define o tamanho aparente com tamanho mínimo
-        min_display_radius = 0.5  # Unidade mínima para visualização
-        display_radius = max(corpo.raio * self.fator_tamanho, min_display_radius)
-
-        # Desenha a esfera
-        quadric = gluNewQuadric()
-        gluSphere(quadric, display_radius, 32, 32)
-        gluDeleteQuadric(quadric)
+        # Desenha a esfera representando o corpo
+        self.desenhar_esfera(corpo.raio * corpo.fator_escala)
 
         glPopMatrix()
 
-    def desenhar_trail(self, corpo: CorpoCeleste) -> None:
+    def desenhar_esfera(self, raio: float, slices: int = 20, stacks: int = 20) -> None:
         """
-        Desenha o rastro da trajetória do corpo celeste.
+        Desenha uma esfera sem o uso do GLUT.
 
-        :param corpo: Instância de CorpoCeleste cujo rastro será desenhado.
+        :param raio: Raio da esfera.
+        :param slices: Número de subdivisões horizontais.
+        :param stacks: Número de subdivisões verticais.
         """
-        if len(corpo.trail) < 2:
-            return  # Não há pontos suficientes para desenhar o rastro
+        for i in range(0, stacks):
+            lat0 = np.pi * (-0.5 + float(i) / stacks)
+            z0 = raio * np.sin(lat0)
+            zr0 = raio * np.cos(lat0)
 
-        glColor3f(*corpo.cor)  # Use a mesma cor do corpo para o rastro
+            lat1 = np.pi * (-0.5 + float(i + 1) / stacks)
+            z1 = raio * np.sin(lat1)
+            zr1 = raio * np.cos(lat1)
+
+            glBegin(GL_QUAD_STRIP)
+            for j in range(0, slices + 1):
+                lng = 2 * np.pi * float(j) / slices
+                x = np.cos(lng)
+                y = np.sin(lng)
+
+                glNormal3f(x * zr0, y * zr0, z0)
+                glVertex3f(x * zr0, y * zr0, z0)
+                glNormal3f(x * zr1, y * zr1, z1)
+                glVertex3f(x * zr1, y * zr1, z1)
+            glEnd()
+
+    def desenhar_rastro(self, corpo: CorpoCeleste) -> None:
+        """
+        Desenha o rastro do corpo celeste.
+        """
         glBegin(GL_LINE_STRIP)
-        for pos in corpo.trail:
-            pos_escalada = pos * self.fator_escala
-            glVertex3f(*pos_escalada)
+        glColor3ub(*corpo.cor)
+        for posicao in corpo.rastro:
+            glVertex3f(*posicao)
         glEnd()
-
-    def renderizar(self, corpos: List[CorpoCeleste]) -> None:
-        """
-        Renderiza todos os corpos celestes na cena.
-
-        :param corpos: Lista de instâncias de CorpoCeleste a serem renderizadas.
-        """
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        self.atualizar_camera()
-
-        # Adiciona rotação global para visualização dinâmica
-        glRotatef(pygame.time.get_ticks() / 1000 * 10, 0, 1, 0)  # Rotaciona 10 graus por segundo em torno do eixo Y
-
-        for corpo in corpos:
-            corpo.desenhar(self)
-
-        pygame.display.flip()
 
     def processar_eventos(self) -> bool:
         """
-        Processa eventos do Pygame, como fechamento da janela e controles de câmera.
-
-        :return: False se o usuário solicitar o fechamento da janela, True caso contrário.
+        Processa eventos do pygame, como saída do programa.
         """
         for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
+            if evento.type == QUIT:
                 return False
-            elif evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_ESCAPE:
+            elif evento.type == KEYDOWN:
+                if evento.key == K_ESCAPE:
                     return False
-                elif evento.key == pygame.K_UP:
-                    self.camera_posicao[2] -= 10.0  # Aproxima a câmera
-                elif evento.key == pygame.K_DOWN:
-                    self.camera_posicao[2] += 10.0  # Afasta a câmera
         return True
+
+    def ajustar_camera(self, posicao: np.ndarray, alvo: np.ndarray, rotacao_camera: np.ndarray) -> None:
+        """
+        Ajusta a posição e a orientação da câmera na cena.
+
+        :param posicao: Posição da câmera (eye).
+        :param alvo: Alvo para o qual a câmera está olhando (center).
+        :param rotacao_camera: Vetor de rotação da câmera em graus nos eixos X, Y e Z.
+        """
+        glLoadIdentity()
+
+        # Aplica as rotações da câmera
+        glRotatef(rotacao_camera[0], 1.0, 0.0, 0.0)  # Rotação em torno do eixo X
+        glRotatef(rotacao_camera[1], 0.0, 1.0, 0.0)  # Rotação em torno do eixo Y
+        glRotatef(rotacao_camera[2], 0.0, 0.0, 1.0)  # Rotação em torno do eixo Z
+
+        # Define a câmera
+        gluLookAt(
+            posicao[0], posicao[1], posicao[2],
+            alvo[0], alvo[1], alvo[2],
+            0.0, 1.0, 0.0  # Vetor "up" fixo
+        )  

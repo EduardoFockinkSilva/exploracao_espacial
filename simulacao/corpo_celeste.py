@@ -1,152 +1,137 @@
-# corpo_celeste.py
-
-from typing import Tuple, List
+from __future__ import annotations
+from typing import Deque, Tuple, Optional
+from collections import deque
 import numpy as np
-
 
 class CorpoCeleste:
     """
-    Classe que representa um corpo celeste genérico, como planetas ou estrelas.
+    Classe que representa um corpo celeste na simulação.
     """
 
     def __init__(
         self,
         nome: str,
         massa: float,
-        posicao: list,
-        velocidade: list,
         raio: float,
-        cor: Tuple[float, float, float],
-        inclinacao: float = 0.0,  # Inclinação em graus
-        rotacao_velocidade: float = 0.0  # Rotação em graus por segundo
+        cor: Tuple[int, int, int],
+        fator_escala: float = 1.0,
+        a: Optional[float] = None,
+        e: Optional[float] = None,
+        i_deg: Optional[float] = None,
+        massa_central: Optional[float] = None,
+        posicao: Optional[np.ndarray] = None,
+        velocidade: Optional[np.ndarray] = None,
+        max_rastro: int = 1000,
     ):
         """
-        Inicializa uma instância de CorpoCeleste.
+        Inicializa um novo corpo celeste.
 
         :param nome: Nome do corpo celeste.
-        :param massa: Massa do corpo celeste (em kg).
-        :param posicao: Posição no espaço 3D como uma lista [x, y, z] (em km).
-        :param velocidade: Velocidade no espaço 3D como uma lista [vx, vy, vz] (em km/s).
-        :param raio: Raio do corpo celeste (em km).
-        :param cor: Cor do corpo celeste como tupla (R, G, B) com valores entre 0.0 e 1.0.
-        :param inclinacao: Inclinação da órbita em graus.
-        :param rotacao_velocidade: Velocidade de rotação em graus por segundo.
+        :param massa: Massa em quilogramas.
+        :param raio: Raio em metros.
+        :param cor: Cor RGB para representação gráfica.
+        :param fator_escala: Fator de escala para visualização.
+        :param a: Semi-eixo maior (m). Opcional.
+        :param e: Excentricidade. Opcional.
+        :param i_deg: Inclinação orbital em graus. Opcional.
+        :param massa_central: Massa do corpo central em kg. Necessário se parâmetros orbitais forem fornecidos.
+        :param posicao: Vetor posição inicial (np.ndarray). Opcional.
+        :param velocidade: Vetor velocidade inicial (np.ndarray). Opcional.
+        :param max_rastro: Número máximo de pontos no rastro.
         """
-        self.nome = nome
-        self.massa = massa
-        self.raio = raio
-        self.cor = cor  # Cor do corpo celeste
-        self.rotacao_velocidade = rotacao_velocidade  # Rotação em graus por segundo
-        self.rotacao_atual = 0.0  # Ângulo atual de rotação
-        self.trail: List[np.ndarray] = []  # Lista para armazenar o rastro da trajetória
-        self.max_trail_length = 1000  # Número máximo de pontos no rastro
+        self.nome: str = nome
+        self.massa: float = massa
+        self.raio: float = raio
+        self.cor: Tuple[int, int, int] = cor
+        self.fator_escala: float = fator_escala
+        self.rastro: Deque[np.ndarray] = deque(maxlen=max_rastro)
 
-        # Convert lists to numpy arrays
-        posicao = np.array(posicao, dtype=float)
-        velocidade = np.array(velocidade, dtype=float)
+        if a is not None and e is not None and i_deg is not None:
+            if massa_central is None:
+                raise ValueError("massa_central deve ser fornecida quando parâmetros orbitais são utilizados.")
+            # Calcular posição e velocidade a partir dos parâmetros orbitais
+            self.posicao, self.velocidade = self.calcular_posicao_velocidade(a, e, i_deg, massa_central)
+        elif posicao is not None and velocidade is not None:
+            self.posicao = posicao.astype(float)
+            self.velocidade = velocidade.astype(float)
+        else:
+            raise ValueError("Deve fornecer parâmetros orbitais (a, e, i_deg, massa_central) ou posição e velocidade iniciais.")
 
-        # Aplicar inclinação
-        if inclinacao != 0.0:
-            posicao, velocidade = self.aplicar_inclinacao(posicao, velocidade, inclinacao)
-
-        self.posicao = posicao
-        self.velocidade = velocidade
-
-        print(f"CorpoCeleste criado: {self.nome}, posição: {self.posicao}, velocidade: {self.velocidade}, raio: {self.raio}, cor: {self.cor}, inclinação: {inclinacao} graus")
-
-    def aplicar_inclinacao(self, posicao: np.ndarray, velocidade: np.ndarray, inclinacao: float) -> Tuple[np.ndarray, np.ndarray]:
+    def atualizar_posicao(self, delta_t: float) -> None:
         """
-        Aplica a inclinação à posição e velocidade do corpo celeste.
+        Atualiza a posição do corpo celeste com base em sua velocidade atual.
 
-        :param posicao: Vetor de posição [x, y, z] em km.
-        :param velocidade: Vetor de velocidade [vx, vy, vz] em km/s.
-        :param inclinacao: Inclinação em graus.
-        :return: Tupla (posicao_inclinada, velocidade_inclinada)
+        :param delta_t: Intervalo de tempo em segundos.
         """
+        # Atualiza a posição com base na velocidade atual
+        self.posicao += self.velocidade * delta_t
+        # Adiciona a nova posição ao rastro
+        self.adicionar_ponto_rastro(self.posicao.copy())
+
+    def calcular_forca_gravitacional(self, outro_corpo: CorpoCeleste) -> np.ndarray:
+        """
+        Calcula a força gravitacional exercida por outro corpo celeste.
+
+        :param outro_corpo: Outro objeto da classe CorpoCeleste.
+        :return: Vetor de força gravitacional (np.ndarray).
+        """
+        G = 6.67430e-11  # Constante gravitacional universal (m^3 kg^-1 s^-2)
+        direcao = outro_corpo.posicao - self.posicao
+        distancia = np.linalg.norm(direcao)
+        if distancia == 0:
+            return np.zeros(3)
+        forca_magnitude = G * self.massa * outro_corpo.massa / distancia**2
+        forca_vetor = (forca_magnitude / distancia) * direcao
+        return forca_vetor
+
+    def adicionar_ponto_rastro(self, posicao: np.ndarray) -> None:
+        """
+        Adiciona um ponto ao rastro do corpo celeste.
+
+        :param posicao: Posição a ser adicionada ao rastro.
+        """
+        self.rastro.append(posicao)
+
+    @staticmethod
+    def calcular_posicao_velocidade(
+        a: float, e: float, i_deg: float, massa_central: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Calcula a posição e velocidade inicial de um planeta em órbita.
+
+        :param a: Semi-eixo maior (m).
+        :param e: Excentricidade.
+        :param i_deg: Inclinação orbital em graus.
+        :param massa_central: Massa do corpo central em kg.
+        :return: Tupla com posição e velocidade (np.ndarray, np.ndarray).
+        """
+        G = 6.67430e-11  # Constante gravitacional universal (m^3 kg^-1 s^-2)
+
         # Converter inclinação para radianos
-        inc_rad = np.radians(inclinacao)
+        i = np.radians(i_deg)
 
-        # Matriz de rotação em torno do eixo Z, ajustada para Y invertido
-        rot_matrix = np.array([
-            [np.cos(inc_rad),  np.sin(inc_rad), 0],
-            [-np.sin(inc_rad), np.cos(inc_rad), 0],
-            [0,                  0,               1]
+        # Posição inicial no periélio (quando a anomalia verdadeira é zero)
+        r = a * (1 - e)
+        posicao_orbital = np.array([r, 0, 0])  # Posição no plano orbital
+
+        # Velocidade orbital no periélio
+        v = np.sqrt(G * massa_central * (1 + e) / (a * (1 - e)))
+        velocidade_orbital = np.array([0, v, 0])  # Velocidade no plano orbital
+
+        # Matriz de rotação para inclinação (rotação em torno do eixo X)
+        cos_i = np.cos(i)
+        sin_i = np.sin(i)
+        matriz_rot = np.array([
+            [1, 0,      0     ],
+            [0, cos_i, -sin_i],
+            [0, sin_i,  cos_i]
         ])
 
-        # Apply rotation
-        posicao_inclinada = rot_matrix @ posicao
-        velocidade_inclinada = rot_matrix @ velocidade
+        # Rotacionar posição e velocidade
+        posicao = matriz_rot @ posicao_orbital
+        velocidade = matriz_rot @ velocidade_orbital
 
-        print(f"{self.nome} com inclinação aplicada: {inclinacao} graus")
-        print(f"Posição inclinada: {posicao_inclinada}")
-        print(f"Velocidade inclinada: {velocidade_inclinada}")
+        return posicao, velocidade
 
-        return posicao_inclinada, velocidade_inclinada
-
-    def atualizar_posicao(self, dt: float) -> None:
-        """
-        Atualiza a posição do corpo celeste com base em sua velocidade e adiciona ao rastro.
-
-        :param dt: Intervalo de tempo desde a última atualização (em segundos).
-        """
-        self.posicao += self.velocidade * dt
-        self.trail.append(self.posicao.copy())
-        if len(self.trail) > self.max_trail_length:
-            self.trail.pop(0)
-        #print(f"{self.nome} atualizada para posição: {self.posicao}")
-
-    def aplicar_forca(self, forca: np.ndarray, dt: float) -> None:
-        """
-        Aplica uma força ao corpo celeste, alterando sua velocidade.
-
-        :param forca: Vetor de força a ser aplicado (em Newtons).
-        :param dt: Intervalo de tempo durante o qual a força é aplicada (em segundos).
-        """
-        aceleracao = forca / self.massa
-        self.velocidade += aceleracao * dt
-        #print(f"{self.nome} velocidade atualizada para: {self.velocidade}")
-
-    def aplicar_gravidade(self, outro_corpo: 'CorpoCeleste', G: float, dt: float) -> None:
-        """
-        Aplica a força gravitacional de outro corpo celeste.
-
-        :param outro_corpo: Outro CorpoCeleste que exerce a força.
-        :param G: Constante gravitacional (em km^3 kg^-1 s^-2).
-        :param dt: Intervalo de tempo (em segundos).
-        """
-        r_vector = outro_corpo.posicao - self.posicao
-        distance = np.linalg.norm(r_vector)
-        if distance == 0:
-            return  # Evita divisão por zero
-        force_magnitude = G * self.massa * outro_corpo.massa / distance**2
-        force_direction = r_vector / distance
-        force = force_direction * force_magnitude
-        self.aplicar_forca(force, dt)
-        #print(f"{self.nome} aplicada força gravitacional de {outro_corpo.nome}: {force}")
-
-    def atualizar_rotacao(self, dt: float) -> None:
-        """
-        Atualiza o ângulo de rotação do corpo celeste.
-
-        :param dt: Intervalo de tempo desde a última atualização (em segundos).
-        """
-        self.rotacao_atual += self.rotacao_velocidade * dt
-        self.rotacao_atual %= 360  # Mantém o ângulo entre 0 e 360
-        #print(f"{self.nome} rotacionada para: {self.rotacao_atual} graus")
-
-    def desenhar_trail(self, motor_grafico) -> None:
-        """
-        Desenha o rastro da trajetória do corpo celeste.
-
-        :param motor_grafico: Instância do MotorGrafico responsável pela renderização.
-        """
-        motor_grafico.desenhar_trail(self)
-
-    def desenhar(self, motor_grafico) -> None:
-        """
-        Desenha o corpo celeste e seu rastro utilizando o motor gráfico fornecido.
-
-        :param motor_grafico: Instância do MotorGrafico responsável pela renderização.
-        """
-        self.desenhar_trail(motor_grafico)
-        motor_grafico.desenhar_corpo(self)
+    def __repr__(self) -> str:
+        return f"CorpoCeleste(nome='{self.nome}', massa={self.massa}, posicao={self.posicao})"

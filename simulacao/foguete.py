@@ -1,40 +1,130 @@
-# foguete.py
-
+from simulacao.corpo_celeste import CorpoCeleste
 from typing import Tuple
-from corpo_celeste import CorpoCeleste
-
+import numpy as np
 
 class Foguete(CorpoCeleste):
     """
-    Classe que representa um foguete, herdando de CorpoCeleste.
+    Classe que representa um foguete na simulação.
+    Herda de CorpoCeleste e adiciona funcionalidades específicas de propulsão.
     """
-
     def __init__(
         self,
         nome: str,
         massa: float,
-        posicao: list,
-        velocidade: list,
         raio: float,
-        cor: Tuple[float, float, float],
-        inclinacao: float = 0.0,  # Inclinação em graus
-        rotacao_velocidade: float = 0.0  # Rotação em graus por segundo
+        cor: Tuple[int, int, int],
+        fator_escala: float = 1.0,
+        posicao: np.ndarray = None,
+        velocidade: np.ndarray = None,
+        orientacao: np.ndarray = None,
+        empuxo_maximo: float = 0.0,
+        consumo_combustivel: float = 0.0,
+        combustivel_inicial: float = 0.0,
+        max_rastro: int = 1000,
     ):
         """
-        Inicializa uma instância de Foguete.
+        Inicializa um novo foguete.
 
         :param nome: Nome do foguete.
-        :param massa: Massa do foguete (em kg).
-        :param posicao: Posição no espaço 3D como uma lista [x, y, z] (em km).
-        :param velocidade: Velocidade no espaço 3D como uma lista [vx, vy, vz] (em km/s).
-        :param raio: Raio do foguete para renderização (em km).
-        :param cor: Cor do foguete como tupla (R, G, B) com valores entre 0.0 e 1.0.
-        :param inclinacao: Inclinação da órbita em graus.
-        :param rotacao_velocidade: Velocidade de rotação em graus por segundo.
+        :param massa: Massa total inicial (incluindo combustível) em kg.
+        :param raio: Raio para representação gráfica.
+        :param cor: Cor RGB para representação gráfica.
+        :param fator_escala: Fator de escala para visualização.
+        :param posicao: Vetor posição inicial (np.ndarray).
+        :param velocidade: Vetor velocidade inicial (np.ndarray).
+        :param orientacao: Vetor direção inicial do foguete (np.ndarray).
+        :param empuxo_maximo: Empuxo máximo do motor em Newtons.
+        :param consumo_combustivel: Taxa de consumo de combustível em kg/s.
+        :param combustivel_inicial: Quantidade inicial de combustível em kg.
+        :param max_rastro: Número máximo de pontos no rastro.
         """
-        super().__init__(nome, massa, posicao, velocidade, raio, cor, inclinacao, rotacao_velocidade)
-        # Propriedades específicas do foguete podem ser adicionadas aqui
-        # Por exemplo, combustível, motor, etc.
+        super().__init__(
+            nome=nome,
+            massa=massa,
+            raio=raio,
+            cor=cor,
+            fator_escala=fator_escala,
+            posicao=posicao,
+            velocidade=velocidade,
+            max_rastro=max_rastro,
+        )
+        self.orientacao = orientacao if orientacao is not None else np.array([0.0, 1.0, 0.0])
+        self.empuxo_maximo = empuxo_maximo
+        self.consumo_combustivel = consumo_combustivel
+        self.combustivel_restante = combustivel_inicial
+        self.aceleracao_propulsao = np.zeros(3)
+        self.propulsao_ativa = False
 
-    # Métodos específicos do foguete podem ser adicionados aqui
-    # Por exemplo, método para acionar o motor e alterar a velocidade
+    def ativar_propulsao(self, intensidade: float) -> None:
+        """
+        Ativa a propulsão do foguete.
+
+        :param intensidade: Intensidade do empuxo (entre 0 e 1).
+        """
+        if self.combustivel_restante > 0:
+            empuxo = self.empuxo_maximo * intensidade
+            self.aceleracao_propulsao = (empuxo / self.massa) * self.orientacao
+            self.propulsao_ativa = True
+        else:
+            self.aceleracao_propulsao = np.zeros(3)
+            self.propulsao_ativa = False
+
+    def desativar_propulsao(self) -> None:
+        """
+        Desativa a propulsão do foguete.
+        """
+        self.aceleracao_propulsao = np.zeros(3)
+        self.propulsao_ativa = False
+
+    def atualizar_orientacao(self, delta_orientacao: np.ndarray) -> None:
+        """
+        Atualiza a orientação do foguete.
+
+        :param delta_orientacao: Vetor de rotação a ser aplicado à orientação atual.
+        """
+        # Normaliza a orientação
+        self.orientacao = self.orientacao + delta_orientacao
+        self.orientacao = self.orientacao / np.linalg.norm(self.orientacao)
+
+    def atualizar_estado(self, delta_t: float) -> None:
+        """
+        Atualiza o estado do foguete, incluindo consumo de combustível.
+
+        :param delta_t: Intervalo de tempo em segundos.
+        """
+        if self.propulsao_ativa and self.combustivel_restante > 0:
+            consumo = self.consumo_combustivel * delta_t
+            if consumo > self.combustivel_restante:
+                consumo = self.combustivel_restante
+                self.desativar_propulsao()
+            self.combustivel_restante -= consumo
+            # Atualiza a massa do foguete (massa total diminui)
+            self.massa -= consumo
+        else:
+            self.aceleracao_propulsao = np.zeros(3)
+            self.propulsao_ativa = False
+
+    def calcular_forca_propulsao(self) -> np.ndarray:
+        """
+        Retorna a força de propulsão atual.
+
+        :return: Vetor de força de propulsão (np.ndarray).
+        """
+        return self.aceleracao_propulsao * self.massa
+
+    def atualizar_velocidade(self, aceleracao_total: np.ndarray, delta_t: float) -> None:
+        """
+        Atualiza a velocidade do foguete com base na aceleração total.
+
+        :param aceleracao_total: Vetor de aceleração total (np.ndarray).
+        :param delta_t: Intervalo de tempo em segundos.
+        """
+        self.velocidade += aceleracao_total * delta_t
+
+    def atualizar_posicao(self, delta_t: float) -> None:
+        """
+        Atualiza a posição do foguete com base em sua velocidade atual.
+
+        :param delta_t: Intervalo de tempo em segundos.
+        """
+        super().atualizar_posicao(delta_t)

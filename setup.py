@@ -1,30 +1,28 @@
-# setup.py
-
 from setuptools import setup, find_packages
 
 setup(
-    name='simulador_sistema_solar',
+    name='simulacao_sistema_solar',
     version='1.0.0',
-    description='Simulador de sistema solar em 3D com foguete controlável e algoritmo A* para rotas otimizadas.',
-    author='Eduardo Fockink Silva',
-    author_email='seuemail@exemplo.com',
-    url='https://github.com/seuusuario/simulador_sistema_solar',
     packages=find_packages(),
-    include_package_data=True,
     install_requires=[
         'numpy',
         'pygame',
         'PyOpenGL',
-        'pytest',
-        'networkx',
     ],
+    author='Eduardo Fockink Silva',
+    author_email='eduardo.epublic@gmail.com',
+    description='Simulação do Sistema Solar com foguetes e controle de câmera',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
+    url='https://github.com/EduardoFockinkSilva/simulacao_sistema_solar',
     classifiers=[
         'Programming Language :: Python :: 3',
         'Operating System :: OS Independent',
     ],
     entry_points={
         'console_scripts': [
-            'simulador_sistema_solar=main:main',
+            'simulacao=simulacao.main:main',
         ],
     },
+    python_requires='>=3.6',
 )

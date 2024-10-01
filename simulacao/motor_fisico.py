@@ -1,37 +1,73 @@
-# motor_fisico.py
-
 from typing import List
-from corpo_celeste import CorpoCeleste
 import numpy as np
-
+from simulacao.corpo_celeste import CorpoCeleste
+from simulacao.foguete import Foguete
 
 class MotorFisico:
     """
-    Classe responsável pela simulação física do sistema.
+    Classe responsável pelos cálculos físicos da simulação.
     """
 
-    def __init__(self, G: float = 6.67430e-20):
+    def __init__(self):
         """
-        Inicializa o MotorFisico com a constante gravitacional.
-
-        :param G: Constante gravitacional (em km^3 kg^-1 s^-2).
+        Inicializa o motor físico.
         """
-        self.G = G
+        pass  # Pode ser utilizado para inicializar parâmetros futuros
 
-    def atualizar(self, corpos: List[CorpoCeleste], dt: float) -> None:
+    def atualizar_corpos(self, corpos: List[CorpoCeleste], delta_t: float) -> None:
         """
-        Atualiza as forças gravitacionais e as posições dos corpos celestes.
-
-        :param corpos: Lista de corpos celestes a serem atualizados.
-        :param dt: Intervalo de tempo desde a última atualização (em segundos).
+        Atualiza as posições e velocidades dos corpos celestes.
         """
-        # Aplicar gravidade entre todos os pares de corpos
-        for i, corpo_a in enumerate(corpos):
-            for j, corpo_b in enumerate(corpos):
-                if i != j:
-                    corpo_a.aplicar_gravidade(corpo_b, self.G, dt)
+        # Calcula as forças resultantes em cada corpo
+        forcas = self.calcular_forcas_gravitacionais(corpos)
 
-        # Atualizar posições e rotações
-        for corpo in corpos:
-            corpo.atualizar_posicao(dt)
-            corpo.atualizar_rotacao(dt)
+        # Atualiza velocidade e posição de cada corpo
+        for idx, (corpo, forca_gravitacional) in enumerate(zip(corpos, forcas)):
+            # Inicializa a aceleração total com a aceleração gravitacional
+            aceleracao_total = forca_gravitacional / corpo.massa
+
+            # Verifica se o corpo é um Foguete
+            if isinstance(corpo, Foguete):
+                # Atualiza o estado interno do foguete (combustível, massa, etc.)
+                corpo.atualizar_estado(delta_t)
+                # Adiciona a aceleração devido à propulsão
+                aceleracao_total += corpo.aceleracao_propulsao
+
+            # Atualiza a velocidade do corpo
+            corpo.velocidade += aceleracao_total * delta_t
+
+            # Atualiza a posição do corpo
+            corpo.atualizar_posicao(delta_t)
+
+    def calcular_forcas_gravitacionais(self, corpos: List[CorpoCeleste]) -> List[np.ndarray]:
+        """
+        Calcula as forças gravitacionais resultantes em cada corpo.
+
+        :param corpos: Lista de corpos celestes na simulação.
+        :return: Lista de vetores de força para cada corpo.
+        """
+        n = len(corpos)
+        forcas = [np.zeros(3) for _ in range(n)]
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                corpo_i = corpos[i]
+                corpo_j = corpos[j]
+
+                direcao = corpo_j.posicao - corpo_i.posicao
+                distancia = np.linalg.norm(direcao)
+                if distancia == 0:
+                    continue  # Evita divisão por zero
+
+                direcao_unitaria = direcao / distancia
+
+                # Constante gravitacional universal (m^3 kg^-1 s^-2)
+                G = 6.67430e-11
+                forca_magnitude = G * corpo_i.massa * corpo_j.massa / distancia**2
+                forca_vetor = forca_magnitude * direcao_unitaria
+
+                # Aplica a força nos corpos (ação e reação)
+                forcas[i] += forca_vetor
+                forcas[j] -= forca_vetor
+
+        return forcas
