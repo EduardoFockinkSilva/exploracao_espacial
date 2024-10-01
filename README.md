@@ -37,8 +37,8 @@ Certifique-se de ter o Python 3 instalado em sua máquina. O projeto depende das
 ### Clonando o Repositório
 
 ```
-git clone https://github.com/seuusuario/simulador_sistema_solar.git
-cd simulador_sistema_solar
+git clone https://github.com/EduardoFockinkSilva/exploracao_espacial.git
+cd simulacao
 ```
 
 ### Usando Ambiente Virtual
@@ -83,13 +83,13 @@ pip install -e .
 Após a instalação, você pode executar o simulador usando o comando:
 
 ```
-simulador_sistema_solar
+simulacao
 ```
 
 Ou, se preferir, execute diretamente o arquivo `main.py`:
 
 ```
-python main.py
+python simulacao/main.py
 ```
 
 ## Uso
@@ -110,21 +110,14 @@ No modo autônomo (a ser implementado), você poderá definir pontos de destino 
 ## Estrutura do Projeto
 
 ```
-simulador_sistema_solar/
+simulacao/
 ├── main.py
 ├── corpo_celeste.py
 ├── foguete.py
 ├── motor_fisico.py
 ├── motor_grafico.py
 ├── algoritmo_a_estrela.py  # (a ser implementado)
-├── utils.py
 ├── testes/
-│   ├── test_corpo_celeste.py
-│   ├── test_foguete.py
-│   └── test_algoritmo_a_estrela.py
-├── assets/
-│   ├── texturas/  # (se usar texturas no futuro)
-│   └── modelos/   # (se usar modelos 3D no futuro)
 ├── requirements.txt
 ├── setup.py
 └── README.md
@@ -148,9 +141,9 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## Contato
 
-- **Nome:** Seu Nome
-- **Email:** seuemail@exemplo.com
-- **GitHub:** [seuusuario](https://github.com/seuusuario)
+- **Nome:** Eduardo Fockink Silva
+- **Email:** eduardo.epublic@gmail.com
+- **GitHub:** [EduardoFockinkSilva](https://github.com/EduardoFockinkSilva)
 
 ---
 
