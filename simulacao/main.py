@@ -1,9 +1,10 @@
 import numpy as np
 from simulacao.corpo_celeste import CorpoCeleste
-from simulacao.motor_grafico import MotorGrafico
+from simulacao.grafico.motor_grafico import MotorGrafico
 from simulacao.motor_fisico import MotorFisico
 from simulacao.foguete import Foguete
 from simulacao.manipulador_entrada import ManipuladorEntrada
+from simulacao.grafico.camera import Camera
 import pygame
 
 # Constantes globais
@@ -14,6 +15,7 @@ def main():
 
     # Instancia o motor gráfico e o motor físico com tamanho de janela ajustado
     motor_grafico = MotorGrafico(largura=1200, altura=920)
+    camera = Camera()
     motor_fisico = MotorFisico()
 
     # Cria o Sol (fornecendo posição e velocidade diretamente)
@@ -152,7 +154,7 @@ def main():
         rotacao_camera += delta_rotacao
 
         # Aplica a rotação à matriz de visualização
-        motor_grafico.ajustar_camera(posicao_camera, alvo_camera, rotacao_camera)
+        camera.ajustar_camera(posicao_camera, alvo_camera, rotacao_camera)
         
         # Desenha os corpos celestes
         motor_grafico.desenhar_corpos(corpos)

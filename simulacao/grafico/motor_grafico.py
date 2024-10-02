@@ -6,6 +6,7 @@ from OpenGL.GLU import *
 from typing import List
 from simulacao.foguete import Foguete
 from simulacao.corpo_celeste import CorpoCeleste
+from simulacao.grafico.iluminacao import configurar_luz, aplicar_material, definir_posicao_luz
 
 class MotorGrafico:
     """
@@ -37,28 +38,14 @@ class MotorGrafico:
         """
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
-        glClearColor(0.0, 0.0, 0.0, 1.0)  # Fundo preto
-
-        # Configuração de projeção ajustada
+        glClearColor(0.0, 0.0, 0.0, 1.0)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(45, (self.largura / self.altura), 1e9, 1e13)
         glMatrixMode(GL_MODELVIEW)
 
-        # Habilita iluminação
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)  # Luz pontual do Sol
-
-        # Define uma luz ambiente global suave para iluminar todas as superfícies
-        intensidade_luz_global = 1.0
-        luz_ambiente_global = [intensidade_luz_global, intensidade_luz_global, intensidade_luz_global*0.8, 1.0]  # Luz ambiente suave e uniforme
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luz_ambiente_global)
-
-        # Configura a luz difusa e especular do Sol (a luz principal)
-        luz_difusa = [1.0, 1.0, 0.8, 1.0]  # Luz amarela quente do Sol
-        luz_especular = [1.0, 1.0, 1.0, 1.0]  # Brilho especular branco
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, luz_difusa)
-        glLightfv(GL_LIGHT0, GL_SPECULAR, luz_especular)
+        # Chama a configuração de luz inicial
+        configurar_luz()
 
     def atualizar_tela(self) -> None:
         """
@@ -249,25 +236,3 @@ class MotorGrafico:
                 if evento.key == K_ESCAPE:
                     return False
         return True
-
-    def ajustar_camera(self, posicao: np.ndarray, alvo: np.ndarray, rotacao_camera: np.ndarray) -> None:
-        """
-        Ajusta a posição e a orientação da câmera na cena.
-
-        :param posicao: Posição da câmera (eye).
-        :param alvo: Alvo para o qual a câmera está olhando (center).
-        :param rotacao_camera: Vetor de rotação da câmera em graus nos eixos X, Y e Z.
-        """
-        glLoadIdentity()
-
-        # Aplica as rotações da câmera
-        glRotatef(rotacao_camera[0], 1.0, 0.0, 0.0)  # Rotação em torno do eixo X
-        glRotatef(rotacao_camera[1], 0.0, 1.0, 0.0)  # Rotação em torno do eixo Y
-        glRotatef(rotacao_camera[2], 0.0, 0.0, 1.0)  # Rotação em torno do eixo Z
-
-        # Define a câmera
-        gluLookAt(
-            posicao[0], posicao[1], posicao[2],
-            alvo[0], alvo[1], alvo[2],
-            0.0, 1.0, 0.0  # Vetor "up" fixo
-        )
