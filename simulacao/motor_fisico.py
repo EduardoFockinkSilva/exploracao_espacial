@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
-from simulacao.corpo_celeste import CorpoCeleste
-from simulacao.foguete import Foguete
+from simulacao.objetos.corpo_celeste import CorpoCeleste
+from simulacao.objetos.foguete import Foguete
 
 class MotorFisico:
     """

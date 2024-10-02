@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-from simulacao.foguete import Foguete
+from simulacao.objetos.foguete import Foguete
 
 class ManipuladorEntrada:
     """

@@ -1,4 +1,4 @@
-from simulacao.corpo_celeste import CorpoCeleste
+from simulacao.objetos.corpo_celeste import CorpoCeleste
 from typing import Tuple
 import numpy as np
 

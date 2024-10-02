@@ -4,8 +4,8 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from typing import List
-from simulacao.foguete import Foguete
-from simulacao.corpo_celeste import CorpoCeleste
+from simulacao.objetos.foguete import Foguete
+from simulacao.objetos.corpo_celeste import CorpoCeleste
 from simulacao.grafico.iluminacao import configurar_luz, aplicar_material, definir_posicao_luz
 
 class MotorGrafico:

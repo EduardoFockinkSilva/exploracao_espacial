@@ -1,12 +1,12 @@
-import numpy as np
-from simulacao.corpo_celeste import CorpoCeleste
-from simulacao.grafico.motor_grafico import MotorGrafico
-from simulacao.motor_fisico import MotorFisico
-from simulacao.foguete import Foguete
-from simulacao.manipulador_entrada import ManipuladorEntrada
-from simulacao.grafico.camera import Camera
 import pygame
 import json
+import numpy as np
+from simulacao.objetos.corpo_celeste import CorpoCeleste
+from simulacao.objetos.foguete import Foguete
+from simulacao.grafico.motor_grafico import MotorGrafico
+from simulacao.grafico.camera import Camera
+from simulacao.motor_fisico import MotorFisico
+from simulacao.manipulador_entrada import ManipuladorEntrada
 
 # Função para carregar dados do arquivo JSON
 def carregar_dados_json(caminho_arquivo):
@@ -68,7 +68,7 @@ def main():
     manipulador_entrada = ManipuladorEntrada()
 
     # Carrega os dados dos corpos celestes e foguete a partir do JSON
-    dados = carregar_dados_json("simulacao\cenas\completo.json")
+    dados = carregar_dados_json("simulacao\cenas\solar.json")
 
     # Cria os corpos celestes
     corpos = criar_corpos_celestes(dados["corpos"])
@@ -92,7 +92,7 @@ def main():
         executando = manipulador_entrada.processar_eventos(foguete)
         
         # Atualiza a física
-        delta_t = 600  # Intervalo de tempo em segundos
+        delta_t = 60 * 60  # Intervalo de tempo em segundos
         motor_fisico.atualizar_corpos(corpos, delta_t)
         
         # Limpa a tela
