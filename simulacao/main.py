@@ -97,8 +97,8 @@ def main():
     # Parâmetros do foguete
     massa_foguete = 2e6  # Massa inicial em kg (incluindo combustível)
     raio_foguete = 1e3   # Raio para visualização
-    empuxo_maximo = 3.5e8  # Empuxo máximo em Newtons
-    consumo_combustivel = 1  # Consumo de combustível em kg/s
+    empuxo_maximo = 3.5e5  # Empuxo máximo em Newtons
+    consumo_combustivel = 0  # Consumo de combustível em kg/s
     combustivel_inicial = 1.5e6  # Combustível inicial em kg
 
     # Posição inicial do foguete (na superfície da Terra)

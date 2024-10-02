@@ -83,10 +83,10 @@ class ManipuladorEntrada:
         # Controles da câmera - movimento
         velocidade_camera = 1e6  # Ajuste a velocidade conforme necessário
 
-        if pygame.K_a in self.teclas_pressionadas:
+        if pygame.K_q in self.teclas_pressionadas:
             # Move a câmera para frente
             movimento_camera += np.array([0.0, 0.0, -velocidade_camera])
-        if pygame.K_d in self.teclas_pressionadas:
+        if pygame.K_e in self.teclas_pressionadas:
             # Move a câmera para trás
             movimento_camera += np.array([0.0, 0.0, velocidade_camera])
         if pygame.K_w in self.teclas_pressionadas:
@@ -95,10 +95,10 @@ class ManipuladorEntrada:
         if pygame.K_s in self.teclas_pressionadas:
             # Move a câmera para a direita
             movimento_camera += np.array([velocidade_camera, 0.0, 0.0])
-        if pygame.K_q in self.teclas_pressionadas:
+        if pygame.K_d in self.teclas_pressionadas:
             # Move a câmera para cima
             movimento_camera += np.array([0.0, velocidade_camera, 0.0])
-        if pygame.K_e in self.teclas_pressionadas:
+        if pygame.K_a in self.teclas_pressionadas:
             # Move a câmera para baixo
             movimento_camera += np.array([0.0, -velocidade_camera, 0.0])
 
@@ -117,6 +117,12 @@ class ManipuladorEntrada:
         if pygame.K_l in self.teclas_pressionadas:
             # Rotaciona a câmera para a direita
             rotacao_camera += np.array([0.0, velocidade_rotacao_camera, 0.0])
+        if pygame.K_o in self.teclas_pressionadas:
+            # Rotaciona a câmera para a esquerda
+            rotacao_camera += np.array([0.0, 0.0, -velocidade_rotacao_camera])
+        if pygame.K_u in self.teclas_pressionadas:
+            # Rotaciona a câmera para a direita
+            rotacao_camera += np.array([0.0, 0.0, velocidade_rotacao_camera])
 
         self.movimento_camera = movimento_camera
         self.rotacao_camera = rotacao_camera

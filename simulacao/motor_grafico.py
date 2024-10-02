@@ -45,6 +45,21 @@ class MotorGrafico:
         gluPerspective(45, (self.largura / self.altura), 1e9, 1e13)
         glMatrixMode(GL_MODELVIEW)
 
+        # Habilita iluminação
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)  # Luz pontual do Sol
+
+        # Define uma luz ambiente global suave para iluminar todas as superfícies
+        intensidade_luz_global = 1.0
+        luz_ambiente_global = [intensidade_luz_global, intensidade_luz_global, intensidade_luz_global*0.8, 1.0]  # Luz ambiente suave e uniforme
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luz_ambiente_global)
+
+        # Configura a luz difusa e especular do Sol (a luz principal)
+        luz_difusa = [1.0, 1.0, 0.8, 1.0]  # Luz amarela quente do Sol
+        luz_especular = [1.0, 1.0, 1.0, 1.0]  # Brilho especular branco
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, luz_difusa)
+        glLightfv(GL_LIGHT0, GL_SPECULAR, luz_especular)
+
     def atualizar_tela(self) -> None:
         """
         Atualiza a tela e controla a taxa de quadros.
@@ -58,11 +73,25 @@ class MotorGrafico:
         """
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    def desenhar_corpos(self, corpos: List[CorpoCeleste]) -> None:
+    def desenhar_corpos(self, corpos: list[CorpoCeleste]) -> None:
         """
-        Renderiza todos os corpos celestes na tela.
+        Renderiza todos os corpos celestes na tela e define a posição da luz com base no Sol.
         """
         for corpo in corpos:
+            if corpo.nome.lower() == "sol":
+                # Define a posição da luz como a posição do Sol
+                luz_posicao = [corpo.posicao[0], corpo.posicao[1], corpo.posicao[2], 1.0]  # Fonte de luz pontual
+                glLightfv(GL_LIGHT0, GL_POSITION, luz_posicao)
+
+                # Configura o Sol para emitir luz (material emissivo)
+                emissao_sol = [1.0, 1.0, 0.5, 1.0]  # Cor amarelada
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissao_sol)
+            else:
+                # Para os demais corpos, o material emissivo é zero
+                emissao_zero = [0.0, 0.0, 0.0, 1.0]
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissao_zero)
+
+            # Desenhar o corpo celeste ou foguete
             self.desenhar_corpo(corpo)
             self.desenhar_rastro(corpo)
 
@@ -75,7 +104,17 @@ class MotorGrafico:
         # Aplica a posição do corpo
         glTranslatef(*corpo.posicao)
 
-        # Verifica se é um foguete para aplicar a orientação
+       # Define os materiais baseados na cor do corpo
+        cor_difusa = [corpo.cor[0] / 255.0, corpo.cor[1] / 255.0, corpo.cor[2] / 255.0, 1.0]
+        cor_especular = [1.0, 1.0, 1.0, 1.0]  # Brilho especular branco
+        brilho = 50.0  # Brilho especular
+
+        # Aplica o material difuso e especular para que o corpo reaja à luz ambiente e ao Sol
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cor_difusa)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cor_especular)
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, brilho)
+
+        # Verifica se é um foguete para aplicar a orientação e desenhar como pirâmide
         if isinstance(corpo, Foguete):
             # Calcula o ângulo e o eixo de rotação a partir da orientação
             orientacao_padrao = np.array([0.0, 1.0, 0.0])  # Orientação padrão
@@ -83,13 +122,75 @@ class MotorGrafico:
             angulo = np.degrees(np.arccos(np.dot(orientacao_padrao, corpo.orientacao)))
             if np.linalg.norm(eixo_rotacao) != 0:
                 glRotatef(angulo, *eixo_rotacao)
-        # Define a cor do corpo
-        glColor3ub(*corpo.cor)
 
-        # Desenha a esfera representando o corpo
-        self.desenhar_esfera(corpo.raio * corpo.fator_escala)
+            # Desenha uma pirâmide representando o foguete
+            self.desenhar_piramide(corpo.raio * corpo.fator_escala)
+        else:
+            # Desenha a esfera representando o corpo celeste
+            self.desenhar_esfera(corpo.raio * corpo.fator_escala)
 
         glPopMatrix()
+
+    def desenhar_piramide(self, tamanho: float) -> None:
+        """
+        Desenha uma pirâmide com o topo apontando para a orientação do foguete.
+        
+        :param tamanho: Escala do tamanho da pirâmide.
+        """
+        # Vértices da pirâmide
+        vertices = [
+            (0.0, tamanho, 0.0),  # Topo
+            (-tamanho, -tamanho, tamanho),  # Base frontal esquerda
+            (tamanho, -tamanho, tamanho),   # Base frontal direita
+            (tamanho, -tamanho, -tamanho),  # Base traseira direita
+            (-tamanho, -tamanho, -tamanho)  # Base traseira esquerda
+        ]
+
+        # Normais das faces
+        normais = [
+            (0.0, 0.4472, tamanho / np.sqrt(2) * 0.4472),  # Frente
+            (tamanho / np.sqrt(3), 0.4472, 0.0),  # Direita
+            (0.0, 0.4472, -tamanho / np.sqrt(2) * 0.4472),  # Traseira
+            (-tamanho / np.sqrt(3), 0.4472, 0.0)  # Esquerda
+        ]
+
+        # Desenhar as faces da pirâmide usando triângulos
+        glBegin(GL_TRIANGLES)
+        
+        # Frente
+        glNormal3fv(normais[0])
+        glVertex3fv(vertices[0])
+        glVertex3fv(vertices[1])
+        glVertex3fv(vertices[2])
+
+        # Direita
+        glNormal3fv(normais[1])
+        glVertex3fv(vertices[0])
+        glVertex3fv(vertices[2])
+        glVertex3fv(vertices[3])
+
+        # Traseira
+        glNormal3fv(normais[2])
+        glVertex3fv(vertices[0])
+        glVertex3fv(vertices[3])
+        glVertex3fv(vertices[4])
+
+        # Esquerda
+        glNormal3fv(normais[3])
+        glVertex3fv(vertices[0])
+        glVertex3fv(vertices[4])
+        glVertex3fv(vertices[1])
+        
+        glEnd()
+
+        # Desenhar a base da pirâmide (quadrado)
+        glBegin(GL_QUADS)
+        glNormal3f(0.0, -1.0, 0.0)  # Normal para baixo
+        glVertex3fv(vertices[1])
+        glVertex3fv(vertices[2])
+        glVertex3fv(vertices[3])
+        glVertex3fv(vertices[4])
+        glEnd()
 
     def desenhar_esfera(self, raio: float, slices: int = 20, stacks: int = 20) -> None:
         """
@@ -114,9 +215,10 @@ class MotorGrafico:
                 x = np.cos(lng)
                 y = np.sin(lng)
 
-                glNormal3f(x * zr0, y * zr0, z0)
+                # Normais
+                glNormal3f(x, y, np.sin(lat0))
                 glVertex3f(x * zr0, y * zr0, z0)
-                glNormal3f(x * zr1, y * zr1, z1)
+                glNormal3f(x, y, np.sin(lat1))
                 glVertex3f(x * zr1, y * zr1, z1)
             glEnd()
 
@@ -124,11 +226,17 @@ class MotorGrafico:
         """
         Desenha o rastro do corpo celeste.
         """
+        # Desativar iluminação para o rastro
+        glDisable(GL_LIGHTING)
+        
         glBegin(GL_LINE_STRIP)
-        glColor3ub(*corpo.cor)
+        glColor3ub(*corpo.cor)  # Usa a cor do corpo para o rastro
         for posicao in corpo.rastro:
             glVertex3f(*posicao)
         glEnd()
+        
+        # Reativar iluminação após desenhar o rastro
+        glEnable(GL_LIGHTING)
 
     def processar_eventos(self) -> bool:
         """
@@ -162,4 +270,4 @@ class MotorGrafico:
             posicao[0], posicao[1], posicao[2],
             alvo[0], alvo[1], alvo[2],
             0.0, 1.0, 0.0  # Vetor "up" fixo
-        )  
+        )
