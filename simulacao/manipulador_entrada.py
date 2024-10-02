@@ -1,131 +1,94 @@
 import pygame
 import numpy as np
 from simulacao.objetos.foguete import Foguete
+from simulacao.grafico.camera import Camera
 
 class ManipuladorEntrada:
     """
     Classe responsável por gerenciar os inputs do usuário.
     """
     def __init__(self):
-        """
-        Inicializa o ManipuladorEntrada.
-        """
         self.teclas_pressionadas = set()
         self.movimento_camera = np.array([0.0, 0.0, 0.0])
         self.rotacao_camera = np.array([0.0, 0.0, 0.0])  # Rotação em torno dos eixos X, Y, Z
-        self.vetor_up = np.array([0.0, 0.0, 0.0])
 
-        # Multiplicador para a velocidade de rotação do foguete
-        self.multiplicador_rotacao_foguete = 1.0
-
-    def processar_eventos(self, foguete: Foguete) -> bool:
+    def processar_eventos(self, foguete: Foguete, camera: Camera) -> bool:
         """
-        Processa eventos do pygame, como saída do programa e controles do foguete e da câmera.
-
-        :param foguete: Instância do foguete a ser controlado.
-        :return: False se o usuário solicitar sair, True caso contrário.
+        Processa eventos do pygame e aplica movimentos à câmera e ao foguete.
         """
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 return False
             elif evento.type == pygame.KEYDOWN:
                 self.teclas_pressionadas.add(evento.key)
-                # Seção dos controles gerais (ESC, menus)
                 if evento.key == pygame.K_ESCAPE:
                     return False
-                # Seção dos controles do foguete
-                elif evento.key == pygame.K_SPACE:
-                    # Ativa a propulsão máxima
-                    foguete.ativar_propulsao(intensidade=1.0)
-                elif evento.key == pygame.K_PLUS or evento.key == pygame.K_KP_PLUS:
-                    # Aumenta o multiplicador de rotação do foguete
-                    self.multiplicador_rotacao_foguete += 0.1
-                elif evento.key == pygame.K_MINUS or evento.key == pygame.K_KP_MINUS:
-                    # Diminui o multiplicador de rotação do foguete
-                    self.multiplicador_rotacao_foguete = max(0.1, self.multiplicador_rotacao_foguete - 0.1)
-                # Futuras teclas de menu podem ser adicionadas aqui
             elif evento.type == pygame.KEYUP:
                 self.teclas_pressionadas.discard(evento.key)
-                # Seção dos controles do foguete
-                if evento.key == pygame.K_SPACE:
-                    # Desativa a propulsão quando a tecla espaço é solta
-                    foguete.desativar_propulsao()
-        self.atualizar_controles(foguete)
+
+        self.atualizar_controles(foguete, camera)
         return True
 
-    def atualizar_controles(self, foguete: Foguete) -> None:
+    def atualizar_controles(self, foguete: Foguete, camera: Camera) -> None:
         """
         Atualiza os controles contínuos, como a orientação do foguete e o movimento da câmera.
         """
         delta_orientacao = np.array([0.0, 0.0, 0.0])
         movimento_camera = np.array([0.0, 0.0, 0.0])
-        rotacao_camera = np.array([0.0, 0.0, 0.0])
+        rotacao_camera = np.array([0.0, 0.0, 0.0])  # Para acumular as rotações da câmera
 
         # Controles do foguete
-        velocidade_rotacao_foguete = 0.01 * self.multiplicador_rotacao_foguete
+        velocidade_rotacao_foguete = 0.01
 
         if pygame.K_UP in self.teclas_pressionadas:
-            # Inclina o foguete para cima
             delta_orientacao += np.array([0.0, 0.0, -velocidade_rotacao_foguete])
         if pygame.K_DOWN in self.teclas_pressionadas:
-            # Inclina o foguete para baixo
             delta_orientacao += np.array([0.0, 0.0, velocidade_rotacao_foguete])
         if pygame.K_LEFT in self.teclas_pressionadas:
-            # Inclina o foguete para a esquerda
             delta_orientacao += np.array([-velocidade_rotacao_foguete, 0.0, 0.0])
         if pygame.K_RIGHT in self.teclas_pressionadas:
-            # Inclina o foguete para a direita
             delta_orientacao += np.array([velocidade_rotacao_foguete, 0.0, 0.0])
 
         if np.linalg.norm(delta_orientacao) > 0:
             foguete.atualizar_orientacao(delta_orientacao)
 
-        # Controles da câmera - movimento
-        velocidade_camera = 1e6  # Ajuste a velocidade conforme necessário
+        # Controles da câmera (relativo à sua orientação)
+        velocidade_camera = 1e9  # Ajuste a velocidade conforme necessário
 
-        if pygame.K_q in self.teclas_pressionadas:
-            # Move a câmera para frente
-            movimento_camera += np.array([0.0, 0.0, -velocidade_camera])
-        if pygame.K_e in self.teclas_pressionadas:
-            # Move a câmera para trás
-            movimento_camera += np.array([0.0, 0.0, velocidade_camera])
         if pygame.K_w in self.teclas_pressionadas:
-            # Move a câmera para a esquerda
-            movimento_camera += np.array([-velocidade_camera, 0.0, 0.0])
+            movimento_camera += np.array([-velocidade_camera,0.0, 0.0])  # Frente
         if pygame.K_s in self.teclas_pressionadas:
-            # Move a câmera para a direita
-            movimento_camera += np.array([velocidade_camera, 0.0, 0.0])
-        if pygame.K_d in self.teclas_pressionadas:
-            # Move a câmera para cima
-            movimento_camera += np.array([0.0, velocidade_camera, 0.0])
+            movimento_camera += np.array([velocidade_camera,0.0, 0.0])   # Trás
         if pygame.K_a in self.teclas_pressionadas:
-            # Move a câmera para baixo
-            movimento_camera += np.array([0.0, -velocidade_camera, 0.0])
+            movimento_camera += np.array([0.0, velocidade_camera, 0.0])  # Esquerda
+        if pygame.K_d in self.teclas_pressionadas:
+            movimento_camera += np.array([0.0, -velocidade_camera, 0.0])   # Direita
+        if pygame.K_q in self.teclas_pressionadas:
+            movimento_camera += np.array([0.0, 0.0, -velocidade_camera])   # Cima
+        if pygame.K_e in self.teclas_pressionadas:
+            movimento_camera += np.array([0.0, 0.0, velocidade_camera])  # Baixo
 
-        # Controles da câmera - rotação
+        # Controles de rotação da câmera com as teclas 'u', 'i', 'o', 'j', 'k', 'l'
         velocidade_rotacao_camera = 0.5  # Velocidade de rotação da câmera em graus por frame
 
         if pygame.K_i in self.teclas_pressionadas:
-            # Rotaciona a câmera para cima
-            rotacao_camera += np.array([-velocidade_rotacao_camera, 0.0, 0.0])
+            rotacao_camera += np.array([-velocidade_rotacao_camera, 0.0, 0.0])  # Rotaciona para cima
         if pygame.K_k in self.teclas_pressionadas:
-            # Rotaciona a câmera para baixo
-            rotacao_camera += np.array([velocidade_rotacao_camera, 0.0, 0.0])
+            rotacao_camera += np.array([velocidade_rotacao_camera, 0.0, 0.0])   # Rotaciona para baixo
         if pygame.K_j in self.teclas_pressionadas:
-            # Rotaciona a câmera para a esquerda
-            rotacao_camera += np.array([0.0, -velocidade_rotacao_camera, 0.0])
+            rotacao_camera += np.array([0.0, -velocidade_rotacao_camera, 0.0])  # Rotaciona para a esquerda
         if pygame.K_l in self.teclas_pressionadas:
-            # Rotaciona a câmera para a direita
-            rotacao_camera += np.array([0.0, velocidade_rotacao_camera, 0.0])
-        if pygame.K_o in self.teclas_pressionadas:
-            # Rotaciona a câmera para a esquerda
-            rotacao_camera += np.array([0.0, 0.0, -velocidade_rotacao_camera])
+            rotacao_camera += np.array([0.0, velocidade_rotacao_camera, 0.0])   # Rotaciona para a direita
         if pygame.K_u in self.teclas_pressionadas:
-            # Rotaciona a câmera para a direita
-            rotacao_camera += np.array([0.0, 0.0, velocidade_rotacao_camera])
+            rotacao_camera += np.array([0.0, 0.0, velocidade_rotacao_camera])  # Rotaciona em torno do eixo Z (anti-horário)
+        if pygame.K_o in self.teclas_pressionadas:
+            rotacao_camera += np.array([0.0, 0.0, -velocidade_rotacao_camera])   # Rotaciona em torno do eixo Z (horário)
 
-        self.movimento_camera = movimento_camera
-        self.rotacao_camera = rotacao_camera
+        # Aplica a rotação acumulada à câmera
+        camera.rotacao += rotacao_camera
+
+        # Atualiza o movimento da câmera com base na sua posição e rotação atuais
+        camera.mover_camera_relativo(movimento_camera)
 
     def obter_movimento_camera(self) -> np.ndarray:
         """
@@ -142,19 +105,3 @@ class ManipuladorEntrada:
         :return: Vetor de rotação da câmera (np.ndarray).
         """
         return self.rotacao_camera
-
-    def obter_vetor_up(self) -> np.ndarray:
-        """
-        Retorna o vetor "up" da câmera.
-
-        :return: Vetor "up" da câmera (np.ndarray).
-        """
-        return self.vetor_up
-
-    def obter_multiplicador_rotacao_foguete(self) -> float:
-        """
-        Retorna o multiplicador de rotação do foguete.
-
-        :return: Multiplicador de rotação do foguete.
-        """
-        return self.multiplicador_rotacao_foguete

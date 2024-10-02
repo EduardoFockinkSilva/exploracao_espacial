@@ -8,17 +8,21 @@ from simulacao.motor_fisico import MotorFisico
 from simulacao.manipulador_entrada import ManipuladorEntrada
 from simulacao.util.gerenciador_dados import carregar_dados_json, criar_corpos_celestes, criar_foguete
 
+posicao_camera = np.array([6e11, 0, 5e10])  # Posição da câmera em um ângulo freten/traz, ,cima/baixo
+alvo_camera = np.array([0.0, 0.0, 0.0])
+rotacao_camera = np.array([0.0, 0.0, -90.0])  # Rotação em graus
+
 def main():
     pygame.init()
 
     # Instancia o motor gráfico e o motor físico com tamanho de janela ajustado
     motor_grafico = MotorGrafico(largura=1200, altura=920)
-    camera = Camera()
+    camera = Camera(posicao=posicao_camera, alvo=alvo_camera, rotacao=rotacao_camera)
     motor_fisico = MotorFisico()
     manipulador_entrada = ManipuladorEntrada()
 
     # Carrega os dados dos corpos celestes e foguete a partir do JSON
-    dados = carregar_dados_json("simulacao\cenas\solar.json")
+    dados = carregar_dados_json("simulacao/cenas/solar.json")
 
     # Cria os corpos celestes
     corpos = criar_corpos_celestes(dados["corpos"])
@@ -30,16 +34,11 @@ def main():
     # Adiciona o foguete à lista de corpos
     corpos.append(foguete)
 
-    # Posição inicial da câmera ajustada para visualizar inclinações e órbitas
-    posicao_camera = np.array([6e11, 0, 5e10])  # Posição da câmera em um ângulo freten/traz, ,cima/baixo
-    alvo_camera = np.array([0.0, 0.0, 0.0])
-    rotacao_camera = np.array([0.0, 0.0, -90.0])  # Rotação em graus
-
     # Loop principal
     executando = True
     while executando:
         # Processa eventos usando o ManipuladorEntrada
-        executando = manipulador_entrada.processar_eventos(foguete)
+        executando = manipulador_entrada.processar_eventos(foguete, camera)
         
         # Atualiza a física
         delta_t = 60 * 60  # Intervalo de tempo em segundos
@@ -48,17 +47,17 @@ def main():
         # Limpa a tela
         motor_grafico.limpar_tela()
         
-        # Atualiza a posição da câmera com base nos inputs
+        # Atualiza a posição e a rotação da câmera com base nos inputs
         movimento_camera = manipulador_entrada.obter_movimento_camera()
-        posicao_camera += movimento_camera * 3600  # Ajuste delta_t conforme necessário
+        camera.mover_camera_relativo(movimento_camera)
 
         # Atualiza a rotação da câmera
         delta_rotacao = manipulador_entrada.obter_rotacao_camera()
-        rotacao_camera += delta_rotacao
+        camera.rotacao += delta_rotacao
 
-        # Aplica a rotação à matriz de visualização
-        camera.ajustar_camera(posicao_camera, alvo_camera, rotacao_camera)
-        
+        # Aplica a nova posição e rotação à matriz de visualização
+        camera.ajustar_camera()
+
         # Desenha os corpos celestes
         motor_grafico.desenhar_corpos(corpos)
         
@@ -68,4 +67,5 @@ def main():
     pygame.quit()
 
 if __name__ == "__main__":
+
     main()

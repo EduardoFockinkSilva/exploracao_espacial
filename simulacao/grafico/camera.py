@@ -8,17 +8,10 @@ class Camera:
         self.alvo = alvo
         self.rotacao = rotacao
 
-    def ajustar_camera(self, posicao: np.ndarray, alvo: np.ndarray, rotacao: np.ndarray) -> None:
+    def ajustar_camera(self) -> None:
         """
-        Ajusta a posição e a orientação da câmera na cena.
-        
-        :param posicao: Posição da câmera (eye).
-        :param alvo: Alvo para o qual a câmera está olhando (center).
-        :param rotacao: Vetor de rotação da câmera em graus nos eixos X, Y e Z.
+        Aplica a rotação e posição da câmera para a cena.
         """
-        self.posicao = posicao
-        self.alvo = alvo
-        self.rotacao = rotacao
         glLoadIdentity()
 
         # Aplica as rotações da câmera
@@ -32,3 +25,35 @@ class Camera:
             self.alvo[0], self.alvo[1], self.alvo[2],
             0.0, 1.0, 0.0  # Vetor "up" fixo
         )
+
+    def mover_camera_relativo(self, movimento: np.ndarray) -> None:
+        """
+        Move a câmera em relação à sua orientação atual (frente, trás, esquerda, direita).
+
+        :param movimento: O vetor de movimento no espaço local da câmera (x, y, z).
+        """
+        # Converte os ângulos de rotação da câmera em uma matriz de rotação
+        yaw = np.radians(self.rotacao[1])  # Rotação em torno do eixo Y (esquerda/direita)
+        pitch = np.radians(self.rotacao[0])  # Rotação em torno do eixo X (para cima/baixo)
+
+        # Vetor "frente" da câmera baseado na rotação
+        direcao_frente = np.array([
+            np.cos(pitch) * np.sin(yaw),
+            np.sin(pitch),
+            np.cos(pitch) * np.cos(yaw)
+        ])
+
+        # Vetor "direita" da câmera baseado na rotação
+        direcao_direita = np.array([
+            np.cos(yaw),
+            0.0,
+            -np.sin(yaw)
+        ])
+
+        # Vetor "cima" é o vetor cruzado entre "direita" e "frente"
+        direcao_cima = np.cross(direcao_direita, direcao_frente)
+
+        # Aplica o movimento relativo às direções da câmera
+        self.posicao += movimento[0] * direcao_direita  # Movimento no eixo X
+        self.posicao += movimento[1] * direcao_cima     # Movimento no eixo Y
+        self.posicao += movimento[2] * direcao_frente   # Movimento no eixo Z
