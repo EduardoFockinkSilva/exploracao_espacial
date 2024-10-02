@@ -20,6 +20,7 @@ def main():
     camera = Camera(posicao=posicao_camera, alvo=alvo_camera, rotacao=rotacao_camera)
     motor_fisico = MotorFisico()
     manipulador_entrada = ManipuladorEntrada()
+    #simulacao = Simulacao
 
     # Carrega os dados dos corpos celestes e foguete a partir do JSON
     dados = carregar_dados_json("simulacao/cenas/solar.json")
@@ -39,10 +40,16 @@ def main():
     while executando:
         # Processa eventos usando o ManipuladorEntrada
         executando = manipulador_entrada.processar_eventos(foguete, camera)
+
+        # Verifica se a simulação está pausada
+        simulacao_pausada = manipulador_entrada.esta_pausado()
         
-        # Atualiza a física
-        delta_t = 60 * 60  # Intervalo de tempo em segundos
-        motor_fisico.atualizar_corpos(corpos, delta_t)
+        # Atualiza a física somente se a simulação não estiver pausada
+        if not simulacao_pausada:
+            delta_t = 60 * 60 # Intervalo de tempo em segundos
+            motor_fisico.atualizar_corpos(corpos, delta_t)
+        else:
+            delta_t = 0  # Não avança o tempo quando pausado
         
         # Limpa a tela
         motor_grafico.limpar_tela()

@@ -11,6 +11,7 @@ class ManipuladorEntrada:
         self.teclas_pressionadas = set()
         self.movimento_camera = np.array([0.0, 0.0, 0.0])
         self.rotacao_camera = np.array([0.0, 0.0, 0.0])  # Rotação em torno dos eixos X, Y, Z
+        self.simulacao_pausada = False
 
     def processar_eventos(self, foguete: Foguete, camera: Camera) -> bool:
         """
@@ -23,6 +24,9 @@ class ManipuladorEntrada:
                 self.teclas_pressionadas.add(evento.key)
                 if evento.key == pygame.K_ESCAPE:
                     return False
+                elif evento.key == pygame.K_m:
+                    # Alterna o estado de pausa
+                    self.simulacao_pausada = not self.simulacao_pausada
             elif evento.type == pygame.KEYUP:
                 self.teclas_pressionadas.discard(evento.key)
 
@@ -105,3 +109,11 @@ class ManipuladorEntrada:
         :return: Vetor de rotação da câmera (np.ndarray).
         """
         return self.rotacao_camera
+
+    def esta_pausado(self) -> bool:
+        """
+        Retorna o estado de pausa da simulação.
+
+        :return: True se a simulação estiver pausada, False caso contrário.
+        """
+        return self.simulacao_pausada
