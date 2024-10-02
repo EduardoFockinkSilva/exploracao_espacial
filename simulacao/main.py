@@ -1,5 +1,4 @@
 import pygame
-import json
 import numpy as np
 from simulacao.objetos.corpo_celeste import CorpoCeleste
 from simulacao.objetos.foguete import Foguete
@@ -7,56 +6,7 @@ from simulacao.grafico.motor_grafico import MotorGrafico
 from simulacao.grafico.camera import Camera
 from simulacao.motor_fisico import MotorFisico
 from simulacao.manipulador_entrada import ManipuladorEntrada
-
-# Função para carregar dados do arquivo JSON
-def carregar_dados_json(caminho_arquivo):
-    with open(caminho_arquivo, 'r') as arquivo:
-        return json.load(arquivo)
-
-# Função para criar os corpos celestes a partir dos dados carregados
-def criar_corpos_celestes(dados_corpos):
-    corpos = []
-    for corpo in dados_corpos:
-        if "velocidade" in corpo:
-            corpos.append(CorpoCeleste(
-                nome=corpo["nome"],
-                massa=corpo["massa"],
-                raio=corpo["raio"],
-                cor=tuple(corpo["cor"]),
-                fator_escala=corpo["fator_escala"],
-                posicao=np.array(corpo["posicao"]),
-                velocidade=np.array(corpo["velocidade"]),
-            ))
-        else:
-            corpos.append(CorpoCeleste(
-                nome=corpo["nome"],
-                massa=corpo["massa"],
-                raio=corpo["raio"],
-                cor=tuple(corpo["cor"]),
-                fator_escala=corpo["fator_escala"],
-                a=corpo["a"],
-                e=corpo["e"],
-                i_deg=corpo["i_deg"],
-                massa_central=corpo["massa_central"]
-            ))
-    return corpos
-
-# Função para criar o foguete a partir dos dados carregados
-def criar_foguete(dados_foguete, terra):
-    posicao_foguete = terra.posicao + np.array(dados_foguete["posicao_inicial"])
-    return Foguete(
-        nome=dados_foguete["nome"],
-        massa=dados_foguete["massa"],
-        raio=dados_foguete["raio"],
-        cor=tuple(dados_foguete["cor"]),
-        fator_escala=dados_foguete["fator_escala"],
-        posicao=posicao_foguete,
-        velocidade=terra.velocidade,  # Inicialmente com a mesma velocidade orbital da Terra
-        orientacao=np.array(dados_foguete["orientacao_inicial"]),
-        empuxo_maximo=dados_foguete["empuxo_maximo"],
-        consumo_combustivel=dados_foguete["consumo_combustivel"],
-        combustivel_inicial=dados_foguete["combustivel_inicial"],
-    )
+from simulacao.util.gerenciador_dados import carregar_dados_json, criar_corpos_celestes, criar_foguete
 
 def main():
     pygame.init()
