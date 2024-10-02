@@ -224,15 +224,3 @@ class MotorGrafico:
         
         # Reativar iluminação após desenhar o rastro
         glEnable(GL_LIGHTING)
-
-    def processar_eventos(self) -> bool:
-        """
-        Processa eventos do pygame, como saída do programa.
-        """
-        for evento in pygame.event.get():
-            if evento.type == QUIT:
-                return False
-            elif evento.type == KEYDOWN:
-                if evento.key == K_ESCAPE:
-                    return False
-        return True

@@ -1,0 +1,49 @@
+{
+    "corpos": [
+      {
+        "nome": "Sol",
+        "massa": 1.9885e30,
+        "raio": 6.9634e8,
+        "cor": [255, 255, 0],
+        "fator_escala": 10,
+        "posicao": [0.0, 0.0, 0.0],
+        "velocidade": [0.0, 0.0, 0.0]
+      },
+      {
+        "nome": "Vênus",
+        "massa": 4.8675e24,
+        "raio": 6.0518e6,
+        "cor": [255, 165, 0],
+        "fator_escala": 500,
+        "a": 1.0821e11,
+        "e": 0.0067,
+        "i_deg": 3.3947,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Terra",
+        "massa": 5.9724e24,
+        "raio": 6.3710e6,
+        "cor": [0, 0, 255],
+        "fator_escala": 500,
+        "a": 1.4959e11,
+        "e": 0.0167,
+        "i_deg": 0.0000,
+        "massa_central": 1.9885e30
+      }
+    ],
+    "foguete": {
+      "nome": "Foguete",
+      "massa": 2e6,
+      "raio": 1e3,
+      "cor": [0, 255, 0],
+      "fator_escala": 1.0e6,
+      "empuxo_maximo": 3.5e5,
+      "consumo_combustivel": 0,
+      "combustivel_inicial": 1.5e6,
+      "posicao_inicial": [0.0, 6.3740e6, 0.0],
+      "velocidade_inicial": [0.0, 0.0, 0.0],
+      "orientacao_inicial": [0.0, 1.0, 0.0]
+    }
+  }
+  

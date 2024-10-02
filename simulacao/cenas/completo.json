@@ -1,0 +1,126 @@
+{
+    "corpos": [
+      {
+        "nome": "Sol",
+        "massa": 1.9885e30,
+        "raio": 6.9634e8,
+        "cor": [255, 255, 0],
+        "fator_escala": 10,
+        "posicao": [0.0, 0.0, 0.0],
+        "velocidade": [0.0, 0.0, 0.0]
+      },
+      {
+        "nome": "Mercúrio",
+        "massa": 3.3011e23,
+        "raio": 2.4397e6,
+        "cor": [169, 169, 169],
+        "fator_escala": 500,
+        "a": 5.791e10,
+        "e": 0.2056,
+        "i_deg": 7.0049,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Vênus",
+        "massa": 4.8675e24,
+        "raio": 6.0518e6,
+        "cor": [255, 165, 0],
+        "fator_escala": 500,
+        "a": 1.0821e11,
+        "e": 0.0067,
+        "i_deg": 3.3947,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Terra",
+        "massa": 5.9724e24,
+        "raio": 6.3710e6,
+        "cor": [0, 0, 255],
+        "fator_escala": 500,
+        "a": 1.4959e11,
+        "e": 0.0167,
+        "i_deg": 0.0000,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Marte",
+        "massa": 6.4171e23,
+        "raio": 3.3895e6,
+        "cor": [255, 0, 0],
+        "fator_escala": 500,
+        "a": 2.2794e11,
+        "e": 0.0934,
+        "i_deg": 1.8500,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Júpiter",
+        "massa": 1.8982e27,
+        "raio": 6.9911e7,
+        "cor": [204, 153, 102],
+        "fator_escala": 500,
+        "a": 7.7857e11,
+        "e": 0.0489,
+        "i_deg": 1.3040,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Saturno",
+        "massa": 5.6834e26,
+        "raio": 5.8232e7,
+        "cor": [255, 204, 153],
+        "fator_escala": 500,
+        "a": 1.4294e12,
+        "e": 0.0565,
+        "i_deg": 2.4852,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Urano",
+        "massa": 8.6810e25,
+        "raio": 2.5362e7,
+        "cor": [173, 216, 230],
+        "fator_escala": 500,
+        "a": 2.871e12,
+        "e": 0.0463,
+        "i_deg": 0.773,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Netuno",
+        "massa": 1.02413e26,
+        "raio": 2.4622e7,
+        "cor": [0, 0, 255],
+        "fator_escala": 500,
+        "a": 4.4951e12,
+        "e": 0.0097,
+        "i_deg": 1.770,
+        "massa_central": 1.9885e30
+      },
+      {
+        "nome": "Plutão",
+        "massa": 1.303e22,
+        "raio": 1.1883e6,
+        "cor": [139, 69, 19],
+        "fator_escala": 500,
+        "a": 5.9064e12,
+        "e": 0.2488,
+        "i_deg": 17.16,
+        "massa_central": 1.9885e30
+      }
+    ],
+    "foguete": {
+      "nome": "Foguete",
+      "massa": 2e6,
+      "raio": 1e3,
+      "cor": [0, 255, 0],
+      "fator_escala": 1.0e6,
+      "empuxo_maximo": 3.5e5,
+      "consumo_combustivel": 0,
+      "combustivel_inicial": 1.5e6,
+      "posicao_inicial": [0.0, 6.3740e6, 0.0],
+      "velocidade_inicial": [0.0, 0.0, 0.0],
+      "orientacao_inicial": [0.0, 1.0, 0.0]
+    }
+  }
+  
