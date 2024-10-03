@@ -3,9 +3,9 @@ from simulacao.objetos.foguete import Foguete
 from simulacao.objetos.corpo_celeste import CorpoCeleste
 
 class Controlador:
-    def __init__(self, foguete: Foguete, destino: CorpoCeleste):
+    def __init__(self, foguete: Foguete):
         self.foguete = foguete
-        self.destino = destino
+        self.destino = self.foguete.destino
         self.kp_posicao = 1e-4  # Ganho proporcional para posição
         self.kp_velocidade = 1e-2  # Ganho proporcional para velocidade
 

@@ -1,34 +1,38 @@
-# simulacao/simulacao.py
-
 import pygame
 import numpy as np
 from simulacao.grafico.motor_grafico import MotorGrafico
 from simulacao.grafico.camera import Camera
 from simulacao.fisica.motor_fisico import MotorFisico
 from simulacao.controle.manipulador_entrada import ManipuladorEntrada
-from simulacao.controle.controlador import Controlador
 from simulacao.objetos.corpo_celeste import CorpoCeleste
 from simulacao.objetos.foguete import Foguete
 from simulacao.util.gerenciador_dados import carregar_dados_json, criar_corpos_celestes, criar_foguete
 
 class Simulacao:
+    """
+    Classe principal que gerencia a execução da simulação.
+    """
     def __init__(self):
+        """
+        Inicializa a simulação, carregando os componentes necessários.
+        """
         # Inicializa o Pygame
         pygame.init()
         self.clock = pygame.time.Clock()
         self.fps = 60  # Frames por segundo
-        self.delta_t = 3600.0  # Tempo entre frames
+
+        # Tempo de simulação (pode ser escalado para acelerar ou desacelerar o tempo na simulação)
+        self.delta_t = 3600.0 * self.fps  # Em segundos (1 hora por frame)
 
         # Inicializa os componentes principais
         self.motor_grafico = MotorGrafico(largura=1200, altura=920)
         self.camera = Camera(
-            posicao=np.array([6e11, 0, 5e10]),
+            posicao=np.array([3e11, 0, 5e10]),
             alvo=np.array([0.0, 0.0, 0.0]),
             rotacao=np.array([0.0, 0.0, -90.0])
         )
         self.motor_fisico = MotorFisico()
         self.manipulador_entrada = ManipuladorEntrada()
-        self.controlador = None  # Será inicializado se a navegação automática for ativada
 
         # Carrega os dados da cena
         self.corpos = []
@@ -37,48 +41,51 @@ class Simulacao:
 
         # Estado da simulação
         self.executando = True
-        self.simulacao_pausada = False
 
     def carregar_cena(self, caminho_arquivo: str):
-        # Carrega os dados dos corpos celestes e foguete a partir do JSON
+        """
+        Carrega os dados dos corpos celestes e do foguete a partir de um arquivo JSON.
+
+        :param caminho_arquivo: Caminho para o arquivo JSON da cena.
+        """
         dados = carregar_dados_json(caminho_arquivo)
 
         # Cria os corpos celestes
         self.corpos = criar_corpos_celestes(dados["corpos"])
 
-        # Cria o foguete
+        # Cria o foguete e o adiciona aos corpos
         terra = next(corpo for corpo in self.corpos if corpo.nome == "Terra")
-        self.foguete = criar_foguete(dados["foguete"], terra)
-
-        # Adiciona o foguete à lista de corpos
+        marte = next(corpo for corpo in self.corpos if corpo.nome == "Marte")
+        self.foguete = criar_foguete(dados["foguete"], terra, marte)
         self.corpos.append(self.foguete)
 
     def executar(self):
+        """
+        Método principal que executa o loop da simulação.
+        """
         while self.executando:
             # Processa eventos
-            self.executando = self.manipulador_entrada.processar_eventos(
-                self.foguete, self.camera, self.corpos
-            )
+            self.executando = self.manipulador_entrada.processar_eventos()
+
+            # Calcula o delta_t real entre frames (em segundos)
+            delta_t_frame = self.clock.get_time() / 1000.0  # Converte de milissegundos para segundos
+            delta_t_simulacao = delta_t_frame * self.delta_t  # Escala o tempo de simulação
 
             # Atualiza os controles
             self.manipulador_entrada.atualizar_controles(
-                self.foguete, self.camera, self.delta_t
+                self.foguete, self.camera, delta_t_frame
             )
 
             # Verifica se a simulação está pausada
-            self.simulacao_pausada = self.manipulador_entrada.esta_pausado()
-
-            # Atualiza a física somente se a simulação não estiver pausada
-            if not self.simulacao_pausada:
-                self.motor_fisico.atualizar_corpos(self.corpos, self.delta_t)
-                self.foguete.atualizar_estado(self.delta_t)
+            if not self.manipulador_entrada.esta_pausado():
+                # Atualiza a física dos corpos
+                self.motor_fisico.atualizar_corpos(self.corpos, delta_t_simulacao)
 
             # Limpa a tela
             self.motor_grafico.limpar_tela()
 
-            # Ajusta a câmera
-            #self.camera.atualizar()
-            self.camera.ajustar_camera()
+            # Atualiza a câmera
+            self.camera.atualizar()
 
             # Desenha os corpos celestes
             self.motor_grafico.desenhar_corpos(self.corpos)
@@ -87,7 +94,7 @@ class Simulacao:
             self.motor_grafico.atualizar_tela()
 
             # Atualiza o relógio
-            self.clock.tick(self.fps)
+            self.clock.tick(self.fps)  # Mantém a taxa de quadros desejada
 
-        # Encerra o Pygame
+        # Encerra o Pygame ao sair do loop
         pygame.quit()

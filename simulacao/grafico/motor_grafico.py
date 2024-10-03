@@ -8,6 +8,8 @@ from simulacao.objetos.foguete import Foguete
 from simulacao.objetos.corpo_celeste import CorpoCeleste
 from simulacao.grafico.iluminacao import configurar_luz, aplicar_material, definir_posicao_luz
 
+GL_MAX_LIGHTS = 8
+
 class MotorGrafico:
     """
     Classe responsável pela renderização gráfica dos corpos celestes.
@@ -60,61 +62,83 @@ class MotorGrafico:
         """
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    def desenhar_corpos(self, corpos: list[CorpoCeleste]) -> None:
+    def desenhar_corpos(self, corpos: List[CorpoCeleste]) -> None:
         """
-        Renderiza todos os corpos celestes na tela e define a posição da luz com base no Sol.
+        Renderiza todos os corpos celestes na tela e define as posições das luzes
+        com base nos corpos com brilho.
         """
+        # Desativar todas as luzes inicialmente
+        for i in range(GL_MAX_LIGHTS):
+            glDisable(GL_LIGHT0 + i)
+
+        # Ativar e configurar luzes para corpos com brilho > 0
+        light_index = 0
         for corpo in corpos:
-            if corpo.nome.lower() == "sol":
-                # Define a posição da luz como a posição do Sol
-                luz_posicao = [corpo.posicao[0], corpo.posicao[1], corpo.posicao[2], 1.0]  # Fonte de luz pontual
-                glLightfv(GL_LIGHT0, GL_POSITION, luz_posicao)
+            if corpo.brilho > 0.0 and light_index < GL_MAX_LIGHTS:
+                glEnable(GL_LIGHT0 + light_index)
+                posicao_luz = [*corpo.posicao, 1.0]
+                cor_luz = [
+                    (corpo.cor[0] / 255.0) * corpo.brilho,
+                    (corpo.cor[1] / 255.0) * corpo.brilho,
+                    (corpo.cor[2] / 255.0) * corpo.brilho,
+                    1.0
+                ]
+                glLightfv(GL_LIGHT0 + light_index, GL_POSITION, posicao_luz)
+                glLightfv(GL_LIGHT0 + light_index, GL_DIFFUSE, cor_luz)
+                glLightfv(GL_LIGHT0 + light_index, GL_SPECULAR, cor_luz)
+                # Configurar atenuação (opcional)
+                glLightf(GL_LIGHT0 + light_index, GL_CONSTANT_ATTENUATION, 1.0)
+                glLightf(GL_LIGHT0 + light_index, GL_LINEAR_ATTENUATION, 0.0)
+                glLightf(GL_LIGHT0 + light_index, GL_QUADRATIC_ATTENUATION, 0.0)
+                light_index += 1
 
-                # Configura o Sol para emitir luz (material emissivo)
-                emissao_sol = [1.0, 1.0, 0.5, 1.0]  # Cor amarelada
-                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissao_sol)
-            else:
-                # Para os demais corpos, o material emissivo é zero
-                emissao_zero = [0.0, 0.0, 0.0, 1.0]
-                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissao_zero)
-
-            # Desenhar o corpo celeste ou foguete
+        # Renderizar todos os corpos
+        for corpo in corpos:
             self.desenhar_corpo(corpo)
             self.desenhar_rastro(corpo)
 
+
     def desenhar_corpo(self, corpo: CorpoCeleste) -> None:
-        """
-        Desenha um corpo celeste ou foguete.
-        """
         glPushMatrix()
 
         # Aplica a posição do corpo
         glTranslatef(*corpo.posicao)
 
-       # Define os materiais baseados na cor do corpo
-        cor_difusa = [corpo.cor[0] / 255.0, corpo.cor[1] / 255.0, corpo.cor[2] / 255.0, 1.0]
-        cor_especular = [1.0, 1.0, 1.0, 1.0]  # Brilho especular branco
-        brilho = 50.0  # Brilho especular
+        # Normaliza a cor do corpo
+        cor_normalizada = [
+            corpo.cor[0] / 255.0,
+            corpo.cor[1] / 255.0,
+            corpo.cor[2] / 255.0,
+            1.0
+        ]
 
-        # Aplica o material difuso e especular para que o corpo reaja à luz ambiente e ao Sol
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, cor_difusa)
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, cor_especular)
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, brilho)
+        # Configura o material
+        if corpo.brilho > 0.0:
+            # Corpo brilhante (emite luz)
+            emissao = [component * corpo.brilho for component in cor_normalizada]
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissao)
+            # Definir a cor ambiente e difusa para zero para evitar iluminação adicional
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, [0.0, 0.0, 0.0, 1.0])
+        else:
+            # Corpo não brilhante (reflete luz)
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.0, 0.0, 0.0, 1.0])
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, cor_normalizada)
 
-        # Verifica se é um foguete para aplicar a orientação e desenhar como pirâmide
+        # Propriedades especulares (opcional)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [1.0, 1.0, 1.0, 1.0])
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0)
+
+        # Desenhar o corpo celeste ou foguete
         if isinstance(corpo, Foguete):
-            # Calcula o ângulo e o eixo de rotação a partir da orientação
-            glRotatef(corpo.orientacao[2], 0.0, 0.0, 1.0)  # Rotação em torno do eixo Z (roll)
-            glRotatef(corpo.orientacao[1], 0.0, 1.0, 0.0)  # Rotação em torno do eixo Y (yaw)
-            glRotatef(corpo.orientacao[0], 1.0, 0.0, 0.0)  # Rotação em torno do eixo X (pitch)
-
-            # Desenha uma pirâmide representando o foguete
+            glRotatef(corpo.orientacao[2], 0.0, 0.0, 1.0)
+            glRotatef(corpo.orientacao[1], 0.0, 1.0, 0.0)
+            glRotatef(corpo.orientacao[0], 1.0, 0.0, 0.0)
             self.desenhar_piramide(corpo.raio * corpo.fator_escala)
         else:
-            # Desenha a esfera representando o corpo celeste
             self.desenhar_esfera(corpo.raio * corpo.fator_escala)
 
         glPopMatrix()
+
 
     def desenhar_piramide(self, tamanho: float) -> None:
         """

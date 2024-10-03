@@ -16,15 +16,16 @@ def criar_corpos_celestes(dados_corpos):
     """
     corpos = []
     for corpo in dados_corpos:
-        if "velocidade" in corpo:
+        if "velocidade" in corpo and "posicao" in corpo:
             corpos.append(CorpoCeleste(
                 nome=corpo["nome"],
                 massa=corpo["massa"],
                 raio=corpo["raio"],
                 cor=tuple(corpo["cor"]),
-                fator_escala=corpo["fator_escala"],
+                fator_escala=corpo.get("fator_escala", 1.0),
                 posicao=np.array(corpo["posicao"]),
                 velocidade=np.array(corpo["velocidade"]),
+                brilho=corpo.get("brilho", 1.0),
             ))
         else:
             corpos.append(CorpoCeleste(
@@ -32,29 +33,43 @@ def criar_corpos_celestes(dados_corpos):
                 massa=corpo["massa"],
                 raio=corpo["raio"],
                 cor=tuple(corpo["cor"]),
-                fator_escala=corpo["fator_escala"],
-                a=corpo["a"],
-                e=corpo["e"],
-                i_deg=corpo["i_deg"],
-                massa_central=corpo["massa_central"]
+                fator_escala=corpo.get("fator_escala", 1.0),
+                a=corpo.get("a"),
+                e=corpo.get("e"),
+                i_deg=corpo.get("i_deg"),
+                massa_central=corpo.get("massa_central"),
+                brilho=corpo.get("brilho", 1.0),
             ))
     return corpos
 
-def criar_foguete(dados_foguete, terra):
+def criar_foguete(dados_foguete, planeta_origem, destino=None):
     """
     Cria um objeto Foguete a partir dos dados carregados.
+
+    :param dados_foguete: Dicionário com os dados do foguete.
+    :param planeta_origem: CorpoCeleste a partir do qual o foguete é lançado.
+    :param destino: Posição (np.ndarray) ou CorpoCeleste destino do foguete.
+    :return: Instância de Foguete.
     """
-    posicao_foguete = terra.posicao + np.array(dados_foguete["posicao_inicial"])
+    posicao_foguete = planeta_origem.posicao + np.array(dados_foguete["posicao_inicial"])
+
+    # Define a velocidade inicial
+    if destino is None or not isinstance(destino, CorpoCeleste):
+        velocidade_inicial = planeta_origem.velocidade.copy()
+    else:
+        velocidade_inicial = destino.velocidade.copy()
+
     return Foguete(
         nome=dados_foguete["nome"],
         massa=dados_foguete["massa"],
         raio=dados_foguete["raio"],
         cor=tuple(dados_foguete["cor"]),
-        fator_escala=dados_foguete["fator_escala"],
+        fator_escala=dados_foguete.get("fator_escala", 1.0),
         posicao=posicao_foguete,
-        velocidade=terra.velocidade,  # Inicialmente com a mesma velocidade orbital da Terra
+        velocidade=velocidade_inicial,
         orientacao=np.array(dados_foguete["orientacao_inicial"]),
         empuxo_maximo=dados_foguete["empuxo_maximo"],
         consumo_combustivel=dados_foguete["consumo_combustivel"],
         combustivel_inicial=dados_foguete["combustivel_inicial"],
+        destino=destino,
     )

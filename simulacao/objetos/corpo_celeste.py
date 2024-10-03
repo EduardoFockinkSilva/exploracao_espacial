@@ -15,13 +15,14 @@ class CorpoCeleste:
         raio: float,
         cor: Tuple[int, int, int],
         fator_escala: float = 1.0,
+        posicao: Optional[np.ndarray] = None,
+        velocidade: Optional[np.ndarray] = None,
         a: Optional[float] = None,
         e: Optional[float] = None,
         i_deg: Optional[float] = None,
         massa_central: Optional[float] = None,
-        posicao: Optional[np.ndarray] = None,
-        velocidade: Optional[np.ndarray] = None,
         max_rastro: int = 1000,
+        brilho: float = 1.0,
     ):
         """
         Inicializa um novo corpo celeste.
@@ -31,32 +32,34 @@ class CorpoCeleste:
         :param raio: Raio em metros.
         :param cor: Cor RGB para representação gráfica.
         :param fator_escala: Fator de escala para visualização.
+        :param posicao: Vetor posição inicial (np.ndarray). Opcional.
+        :param velocidade: Vetor velocidade inicial (np.ndarray). Opcional.
         :param a: Semi-eixo maior (m). Opcional.
         :param e: Excentricidade. Opcional.
         :param i_deg: Inclinação orbital em graus. Opcional.
         :param massa_central: Massa do corpo central em kg. Necessário se parâmetros orbitais forem fornecidos.
-        :param posicao: Vetor posição inicial (np.ndarray). Opcional.
-        :param velocidade: Vetor velocidade inicial (np.ndarray). Opcional.
         :param max_rastro: Número máximo de pontos no rastro.
+        :param brilho: Brilho do corpo celeste para efeitos de iluminação.
         """
         self.nome: str = nome
         self.massa: float = massa
         self.raio: float = raio
         self.cor: Tuple[int, int, int] = cor
         self.fator_escala: float = fator_escala
+        self.brilho: float = brilho
         self.rastro: Deque[np.ndarray] = deque(maxlen=max_rastro)
 
-        if a is not None and e is not None and i_deg is not None:
-            if massa_central is None:
-                raise ValueError("massa_central deve ser fornecida quando parâmetros orbitais são utilizados.")
-            # Calcular posição e velocidade a partir dos parâmetros orbitais
-            self.posicao, self.velocidade = self.calcular_posicao_velocidade(a, e, i_deg, massa_central)
-        elif posicao is not None and velocidade is not None:
+        if posicao is not None and velocidade is not None:
             self.posicao = posicao.astype(float)
             self.velocidade = velocidade.astype(float)
+        elif all(param is not None for param in [a, e, i_deg, massa_central]):
+            # Calcular posição e velocidade a partir dos parâmetros orbitais
+            self.posicao, self.velocidade = self.calcular_posicao_velocidade(a, e, i_deg, massa_central)
         else:
-            raise ValueError("Deve fornecer parâmetros orbitais (a, e, i_deg, massa_central) ou posição e velocidade iniciais.")
-
+            raise ValueError(
+                "Deve fornecer posição e velocidade ou parâmetros orbitais (a, e, i_deg, massa_central)."
+            )
+        
     def atualizar_posicao(self, delta_t: float) -> None:
         """
         Atualiza a posição do corpo celeste com base em sua velocidade atual.

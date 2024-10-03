@@ -1,6 +1,6 @@
-from simulacao.objetos.corpo_celeste import CorpoCeleste
-from typing import Tuple
+from typing import Tuple, Optional, Union
 import numpy as np
+from simulacao.objetos.corpo_celeste import CorpoCeleste
 
 class Foguete(CorpoCeleste):
     """
@@ -14,13 +14,14 @@ class Foguete(CorpoCeleste):
         raio: float,
         cor: Tuple[int, int, int],
         fator_escala: float = 1.0,
-        posicao: np.ndarray = None,
-        velocidade: np.ndarray = None,
-        orientacao: np.ndarray = None,
+        posicao: Optional[np.ndarray] = None,
+        velocidade: Optional[np.ndarray] = None,
+        orientacao: Optional[np.ndarray] = None,
         empuxo_maximo: float = 0.0,
         consumo_combustivel: float = 0.0,
         combustivel_inicial: float = 0.0,
         max_rastro: int = 1000,
+        destino: Optional[Union[np.ndarray, CorpoCeleste]] = None,
     ):
         """
         Inicializa um novo foguete.
@@ -31,13 +32,18 @@ class Foguete(CorpoCeleste):
         :param cor: Cor RGB para representação gráfica.
         :param fator_escala: Fator de escala para visualização.
         :param posicao: Vetor posição inicial (np.ndarray).
-        :param velocidade: Vetor velocidade inicial (np.ndarray).
+        :param velocidade: Vetor velocidade inicial (np.ndarray). Se None e destino for um planeta, usa a velocidade do planeta.
         :param orientacao: Vetor direção inicial do foguete (np.ndarray).
         :param empuxo_maximo: Empuxo máximo do motor em Newtons.
         :param consumo_combustivel: Taxa de consumo de combustível em kg/s.
         :param combustivel_inicial: Quantidade inicial de combustível em kg.
         :param max_rastro: Número máximo de pontos no rastro.
+        :param destino: Posição (np.ndarray) ou CorpoCeleste destino do foguete.
         """
+        # Se a velocidade não for fornecida e o destino for um planeta, usa a velocidade do planeta
+        if velocidade is None and isinstance(destino, CorpoCeleste):
+            velocidade = destino.velocidade.copy()
+
         super().__init__(
             nome=nome,
             massa=massa,
@@ -48,12 +54,14 @@ class Foguete(CorpoCeleste):
             velocidade=velocidade,
             max_rastro=max_rastro,
         )
-        self.orientacao = orientacao if orientacao is not None else np.array([0.0, 1.0, 0.0])
+
+        self.orientacao = orientacao if orientacao is not None else np.array([0.0, 0.0, 0.0])
         self.empuxo_maximo = empuxo_maximo
         self.consumo_combustivel = consumo_combustivel
         self.combustivel_restante = combustivel_inicial
         self.aceleracao_propulsao = np.zeros(3)
         self.propulsao_ativa = False
+        self.destino = destino
 
     def ativar_propulsao(self, intensidade: float) -> None:
         """

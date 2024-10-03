@@ -8,7 +8,7 @@ class Camera:
         self.alvo = alvo
         self.rotacao = rotacao
 
-    def ajustar_camera(self) -> None:
+    def atualizar(self) -> None:
         """
         Aplica a rotação e posição da câmera para a cena.
         """
