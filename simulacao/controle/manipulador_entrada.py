@@ -1,9 +1,10 @@
 import pygame
 import numpy as np
+from typing import List
 from simulacao.objetos.foguete import Foguete
 from simulacao.grafico.camera import Camera
 from simulacao.objetos.corpo_celeste import CorpoCeleste
-from simulacao.navegador import Navegador
+from simulacao.controle.controlador import Controlador
 
 class ManipuladorEntrada:
     """
@@ -15,9 +16,9 @@ class ManipuladorEntrada:
         self.rotacao_camera = np.array([0.0, 0.0, 0.0])  # Rotação em torno dos eixos X, Y, Z
         self.simulacao_pausada = False
         self.navegacao_automatica = False
-        self.navegador = None  # Será uma instância da classe Navegador
+        self.controlador = None  # Será uma instância da classe Navegador
 
-    def processar_eventos(self, foguete: Foguete, camera: Camera, corpos: list[CorpoCeleste]) -> bool:
+    def processar_eventos(self, foguete: Foguete, camera: Camera, corpos: List[CorpoCeleste]) -> bool:
         """
         Processa eventos do pygame e aplica movimentos à câmera e ao foguete.
         """
@@ -37,17 +38,16 @@ class ManipuladorEntrada:
                     if self.navegacao_automatica:
                         # Seleciona o planeta destino (por exemplo, Marte)
                         destino = next(corpo for corpo in corpos if corpo.nome == "Marte")
-                        self.navegador = Navegador(foguete, destino)
+                        self.controlador = Controlador(foguete, destino)
                     else:
-                        self.navegador = None
+                        self.controlador = None
                         foguete.desativar_propulsao()
             elif evento.type == pygame.KEYUP:
                 self.teclas_pressionadas.discard(evento.key)
 
-        self.atualizar_controles(foguete, camera)
         return True
 
-    def atualizar_controles(self, foguete: Foguete, camera: Camera) -> None:
+    def atualizar_controles(self, foguete: Foguete, camera: Camera, delta_t: float) -> None:
         """
         Atualiza os controles contínuos, como a orientação do foguete e o movimento da câmera.
         """
@@ -55,8 +55,8 @@ class ManipuladorEntrada:
         movimento_camera = np.array([0.0, 0.0, 0.0])
         rotacao_camera = np.array([0.0, 0.0, 0.0])  # Para acumular as rotações da câmera
 
-        if self.navegacao_automatica and self.navegador:
-            self.navegador.executar_proxima_acao()
+        if self.navegacao_automatica and self.controlador:
+            self.controlador.atualizar(delta_t)
         else:
             # Controles do foguete
             velocidade_rotacao_foguete = 1.0
