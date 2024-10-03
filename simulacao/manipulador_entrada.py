@@ -42,7 +42,7 @@ class ManipuladorEntrada:
         rotacao_camera = np.array([0.0, 0.0, 0.0])  # Para acumular as rotações da câmera
 
         # Controles do foguete
-        velocidade_rotacao_foguete = 0.01
+        velocidade_rotacao_foguete = 1.0
 
         if pygame.K_UP in self.teclas_pressionadas:
             delta_orientacao += np.array([0.0, 0.0, -velocidade_rotacao_foguete])
@@ -52,6 +52,10 @@ class ManipuladorEntrada:
             delta_orientacao += np.array([-velocidade_rotacao_foguete, 0.0, 0.0])
         if pygame.K_RIGHT in self.teclas_pressionadas:
             delta_orientacao += np.array([velocidade_rotacao_foguete, 0.0, 0.0])
+        if pygame.K_z in self.teclas_pressionadas:
+            delta_orientacao += np.array([0.0, -velocidade_rotacao_foguete, 0.0])
+        if pygame.K_x in self.teclas_pressionadas:
+            delta_orientacao += np.array([0.0, velocidade_rotacao_foguete, 0.0])
 
         if np.linalg.norm(delta_orientacao) > 0:
             foguete.atualizar_orientacao(delta_orientacao)

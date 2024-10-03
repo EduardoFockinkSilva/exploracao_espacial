@@ -104,11 +104,9 @@ class MotorGrafico:
         # Verifica se é um foguete para aplicar a orientação e desenhar como pirâmide
         if isinstance(corpo, Foguete):
             # Calcula o ângulo e o eixo de rotação a partir da orientação
-            orientacao_padrao = np.array([0.0, 1.0, 0.0])  # Orientação padrão
-            eixo_rotacao = np.cross(orientacao_padrao, corpo.orientacao)
-            angulo = np.degrees(np.arccos(np.dot(orientacao_padrao, corpo.orientacao)))
-            if np.linalg.norm(eixo_rotacao) != 0:
-                glRotatef(angulo, *eixo_rotacao)
+            glRotatef(corpo.orientacao[2], 0.0, 0.0, 1.0)  # Rotação em torno do eixo Z (roll)
+            glRotatef(corpo.orientacao[1], 0.0, 1.0, 0.0)  # Rotação em torno do eixo Y (yaw)
+            glRotatef(corpo.orientacao[0], 1.0, 0.0, 0.0)  # Rotação em torno do eixo X (pitch)
 
             # Desenha uma pirâmide representando o foguete
             self.desenhar_piramide(corpo.raio * corpo.fator_escala)
@@ -120,12 +118,13 @@ class MotorGrafico:
 
     def desenhar_piramide(self, tamanho: float) -> None:
         """
-        Desenha uma pirâmide com o topo apontando para a orientação do foguete.
-        
+        Desenha uma pirâmide com o topo apontando para a orientação do foguete, 
+        com uma pirâmide menor no topo e uma face colorida para melhor orientação.
+
         :param tamanho: Escala do tamanho da pirâmide.
         """
-        # Vértices da pirâmide
-        vertices = [
+        # Vértices da pirâmide principal (parte inferior)
+        vertices_principal = [
             (0.0, tamanho, 0.0),  # Topo
             (-tamanho, -tamanho, tamanho),  # Base frontal esquerda
             (tamanho, -tamanho, tamanho),   # Base frontal direita
@@ -133,51 +132,102 @@ class MotorGrafico:
             (-tamanho, -tamanho, -tamanho)  # Base traseira esquerda
         ]
 
-        # Normais das faces
-        normais = [
+        # Normais das faces principais
+        normais_principal = [
             (0.0, 0.4472, tamanho / np.sqrt(2) * 0.4472),  # Frente
             (tamanho / np.sqrt(3), 0.4472, 0.0),  # Direita
             (0.0, 0.4472, -tamanho / np.sqrt(2) * 0.4472),  # Traseira
             (-tamanho / np.sqrt(3), 0.4472, 0.0)  # Esquerda
         ]
 
-        # Desenhar as faces da pirâmide usando triângulos
+        # Desenhar as faces da pirâmide principal
         glBegin(GL_TRIANGLES)
         
         # Frente
-        glNormal3fv(normais[0])
-        glVertex3fv(vertices[0])
-        glVertex3fv(vertices[1])
-        glVertex3fv(vertices[2])
+        glNormal3fv(normais_principal[0])
+        glVertex3fv(vertices_principal[0])
+        glVertex3fv(vertices_principal[1])
+        glVertex3fv(vertices_principal[2])
 
         # Direita
-        glNormal3fv(normais[1])
-        glVertex3fv(vertices[0])
-        glVertex3fv(vertices[2])
-        glVertex3fv(vertices[3])
+        glNormal3fv(normais_principal[1])
+        glVertex3fv(vertices_principal[0])
+        glVertex3fv(vertices_principal[2])
+        glVertex3fv(vertices_principal[3])
 
         # Traseira
-        glNormal3fv(normais[2])
-        glVertex3fv(vertices[0])
-        glVertex3fv(vertices[3])
-        glVertex3fv(vertices[4])
+        glNormal3fv(normais_principal[2])
+        glVertex3fv(vertices_principal[0])
+        glVertex3fv(vertices_principal[3])
+        glVertex3fv(vertices_principal[4])
 
         # Esquerda
-        glNormal3fv(normais[3])
-        glVertex3fv(vertices[0])
-        glVertex3fv(vertices[4])
-        glVertex3fv(vertices[1])
+        glNormal3fv(normais_principal[3])
+        glVertex3fv(vertices_principal[0])
+        glVertex3fv(vertices_principal[4])
+        glVertex3fv(vertices_principal[1])
         
         glEnd()
 
-        # Desenhar a base da pirâmide (quadrado)
+        # Desenhar a base da pirâmide principal (quadrado)
         glBegin(GL_QUADS)
         glNormal3f(0.0, -1.0, 0.0)  # Normal para baixo
-        glVertex3fv(vertices[1])
-        glVertex3fv(vertices[2])
-        glVertex3fv(vertices[3])
-        glVertex3fv(vertices[4])
+        glVertex3fv(vertices_principal[1])
+        glVertex3fv(vertices_principal[2])
+        glVertex3fv(vertices_principal[3])
+        glVertex3fv(vertices_principal[4])
         glEnd()
+
+        # Agora desenhar a pirâmide menor no topo da pirâmide principal
+        tamanho_menor = tamanho * 0.5  # Tamanho menor da segunda pirâmide no topo
+
+        vertices_menor = [
+            (0.0, tamanho * 1.5, 0.0),  # Topo da pirâmide menor
+            (-tamanho_menor, tamanho, tamanho_menor),  # Base frontal esquerda
+            (tamanho_menor, tamanho, tamanho_menor),   # Base frontal direita
+            (tamanho_menor, tamanho, -tamanho_menor),  # Base traseira direita
+            (-tamanho_menor, tamanho, -tamanho_menor)  # Base traseira esquerda
+        ]
+
+        # Desenhar as faces da pirâmide menor, com a face frontal de outra cor
+        glBegin(GL_TRIANGLES)
+        
+        # Frente (face colorida diferente para ajudar na orientação)
+        glColor3f(1.0, 0.0, 0.0)  # Cor vermelha para a face frontal
+        glVertex3fv(vertices_menor[0])
+        glVertex3fv(vertices_menor[1])
+        glVertex3fv(vertices_menor[2])
+
+        # Direita
+        glColor3f(1.0, 1.0, 1.0)  # Branco para as outras faces
+        glVertex3fv(vertices_menor[0])
+        glVertex3fv(vertices_menor[2])
+        glVertex3fv(vertices_menor[3])
+
+        # Traseira
+        glVertex3fv(vertices_menor[0])
+        glVertex3fv(vertices_menor[3])
+        glVertex3fv(vertices_menor[4])
+
+        # Esquerda
+        glVertex3fv(vertices_menor[0])
+        glVertex3fv(vertices_menor[4])
+        glVertex3fv(vertices_menor[1])
+
+        glEnd()
+
+        # Desenhar a base da pirâmide menor (quadrado)
+        glBegin(GL_QUADS)
+        glNormal3f(0.0, -1.0, 0.0)  # Normal para baixo
+        glVertex3fv(vertices_menor[1])
+        glVertex3fv(vertices_menor[2])
+        glVertex3fv(vertices_menor[3])
+        glVertex3fv(vertices_menor[4])
+        glEnd()
+
+        # Resetar a cor para o padrão após desenhar
+        glColor3f(1.0, 1.0, 1.0)
+
 
     def desenhar_esfera(self, raio: float, slices: int = 20, stacks: int = 20) -> None:
         """

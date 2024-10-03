@@ -63,11 +63,13 @@ class Foguete(CorpoCeleste):
         """
         if self.combustivel_restante > 0:
             empuxo = self.empuxo_maximo * intensidade
-            self.aceleracao_propulsao = (empuxo / self.massa) * self.orientacao
+            vetor_direcao = self.calcular_vetor_direcao()
+            self.aceleracao_propulsao = (empuxo / self.massa) * vetor_direcao
             self.propulsao_ativa = True
         else:
             self.aceleracao_propulsao = np.zeros(3)
             self.propulsao_ativa = False
+
 
     def desativar_propulsao(self) -> None:
         """
@@ -76,15 +78,63 @@ class Foguete(CorpoCeleste):
         self.aceleracao_propulsao = np.zeros(3)
         self.propulsao_ativa = False
 
+    def calcular_vetor_direcao(self) -> np.ndarray:
+        """
+        Calcula o vetor de direção do foguete com base em seus ângulos de orientação.
+        
+        :return: Vetor de direção (np.ndarray).
+        """
+        pitch_rad = np.radians(self.orientacao[0])
+        yaw_rad = np.radians(self.orientacao[1])
+        roll_rad = np.radians(self.orientacao[2])
+
+        # Cálculo do vetor de direção usando os ângulos de Euler
+        # Aqui, consideramos que o foguete aponta inicialmente no eixo Z positivo
+        # e aplicamos as rotações na ordem: roll, pitch, yaw
+        # Você pode ajustar conforme o sistema de coordenadas do seu OpenGL
+
+        # Matriz de rotação para pitch (X)
+        rot_x = np.array([
+            [1, 0, 0],
+            [0, np.cos(pitch_rad), -np.sin(pitch_rad)],
+            [0, np.sin(pitch_rad), np.cos(pitch_rad)]
+        ])
+
+        # Matriz de rotação para yaw (Y)
+        rot_y = np.array([
+            [np.cos(yaw_rad), 0, np.sin(yaw_rad)],
+            [0, 1, 0],
+            [-np.sin(yaw_rad), 0, np.cos(yaw_rad)]
+        ])
+
+        # Matriz de rotação para roll (Z)
+        rot_z = np.array([
+            [np.cos(roll_rad), -np.sin(roll_rad), 0],
+            [np.sin(roll_rad), np.cos(roll_rad), 0],
+            [0, 0, 1]
+        ])
+
+        # Matriz de rotação total
+        rotacao_total = rot_z @ rot_y @ rot_x
+
+        # Vetor de direção inicial (eixo Z positivo)
+        direcao_inicial = np.array([0.0, 0.0, 1.0])
+
+        # Aplica a rotação ao vetor de direção
+        vetor_direcao = rotacao_total @ direcao_inicial
+
+        return vetor_direcao
+
     def atualizar_orientacao(self, delta_orientacao: np.ndarray) -> None:
         """
         Atualiza a orientação do foguete.
 
-        :param delta_orientacao: Vetor de rotação a ser aplicado à orientação atual.
+        :param delta_orientacao: Vetor de rotação a ser aplicado à orientação atual (em graus).
         """
-        # Normaliza a orientação
-        self.orientacao = self.orientacao + delta_orientacao
-        self.orientacao = self.orientacao / np.linalg.norm(self.orientacao)
+        self.orientacao += delta_orientacao
+        # Opcionalmente, podemos limitar os ângulos entre 0 e 360 graus
+        self.orientacao = np.mod(self.orientacao, 360)
+
 
     def atualizar_estado(self, delta_t: float) -> None:
         """
