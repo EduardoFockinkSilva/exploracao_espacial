@@ -2,6 +2,8 @@ import pygame
 import numpy as np
 from simulacao.objetos.foguete import Foguete
 from simulacao.grafico.camera import Camera
+from simulacao.objetos.corpo_celeste import CorpoCeleste
+from simulacao.navegador import Navegador
 
 class ManipuladorEntrada:
     """
@@ -12,8 +14,10 @@ class ManipuladorEntrada:
         self.movimento_camera = np.array([0.0, 0.0, 0.0])
         self.rotacao_camera = np.array([0.0, 0.0, 0.0])  # Rotação em torno dos eixos X, Y, Z
         self.simulacao_pausada = False
+        self.navegacao_automatica = False
+        self.navegador = None  # Será uma instância da classe Navegador
 
-    def processar_eventos(self, foguete: Foguete, camera: Camera) -> bool:
+    def processar_eventos(self, foguete: Foguete, camera: Camera, corpos: list[CorpoCeleste]) -> bool:
         """
         Processa eventos do pygame e aplica movimentos à câmera e ao foguete.
         """
@@ -27,6 +31,16 @@ class ManipuladorEntrada:
                 elif evento.key == pygame.K_m:
                     # Alterna o estado de pausa
                     self.simulacao_pausada = not self.simulacao_pausada
+                if evento.key == pygame.K_n:
+                    # Ativa ou desativa a navegação automática
+                    self.navegacao_automatica = not self.navegacao_automatica
+                    if self.navegacao_automatica:
+                        # Seleciona o planeta destino (por exemplo, Marte)
+                        destino = next(corpo for corpo in corpos if corpo.nome == "Marte")
+                        self.navegador = Navegador(foguete, destino)
+                    else:
+                        self.navegador = None
+                        foguete.desativar_propulsao()
             elif evento.type == pygame.KEYUP:
                 self.teclas_pressionadas.discard(evento.key)
 
@@ -41,24 +55,28 @@ class ManipuladorEntrada:
         movimento_camera = np.array([0.0, 0.0, 0.0])
         rotacao_camera = np.array([0.0, 0.0, 0.0])  # Para acumular as rotações da câmera
 
-        # Controles do foguete
-        velocidade_rotacao_foguete = 1.0
+        if self.navegacao_automatica and self.navegador:
+            self.navegador.executar_proxima_acao()
+        else:
+            # Controles do foguete
+            velocidade_rotacao_foguete = 1.0
 
-        if pygame.K_UP in self.teclas_pressionadas:
-            delta_orientacao += np.array([0.0, 0.0, -velocidade_rotacao_foguete])
-        if pygame.K_DOWN in self.teclas_pressionadas:
-            delta_orientacao += np.array([0.0, 0.0, velocidade_rotacao_foguete])
-        if pygame.K_LEFT in self.teclas_pressionadas:
-            delta_orientacao += np.array([-velocidade_rotacao_foguete, 0.0, 0.0])
-        if pygame.K_RIGHT in self.teclas_pressionadas:
-            delta_orientacao += np.array([velocidade_rotacao_foguete, 0.0, 0.0])
-        if pygame.K_z in self.teclas_pressionadas:
-            delta_orientacao += np.array([0.0, -velocidade_rotacao_foguete, 0.0])
-        if pygame.K_x in self.teclas_pressionadas:
-            delta_orientacao += np.array([0.0, velocidade_rotacao_foguete, 0.0])
+            if pygame.K_UP in self.teclas_pressionadas:
+                delta_orientacao += np.array([0.0, 0.0, -velocidade_rotacao_foguete])
+            if pygame.K_DOWN in self.teclas_pressionadas:
+                delta_orientacao += np.array([0.0, 0.0, velocidade_rotacao_foguete])
+            if pygame.K_LEFT in self.teclas_pressionadas:
+                delta_orientacao += np.array([-velocidade_rotacao_foguete, 0.0, 0.0])
+            if pygame.K_RIGHT in self.teclas_pressionadas:
+                delta_orientacao += np.array([velocidade_rotacao_foguete, 0.0, 0.0])
+            if pygame.K_z in self.teclas_pressionadas:
+                delta_orientacao += np.array([0.0, -velocidade_rotacao_foguete, 0.0])
+            if pygame.K_x in self.teclas_pressionadas:
+                delta_orientacao += np.array([0.0, velocidade_rotacao_foguete, 0.0])
 
-        if np.linalg.norm(delta_orientacao) > 0:
-            foguete.atualizar_orientacao(delta_orientacao)
+            if np.linalg.norm(delta_orientacao) > 0:
+                foguete.atualizar_orientacao(delta_orientacao)
+            pass
 
         # Controles da câmera (relativo à sua orientação)
         velocidade_camera = 1e9  # Ajuste a velocidade conforme necessário

@@ -39,7 +39,10 @@ def main():
     executando = True
     while executando:
         # Processa eventos usando o ManipuladorEntrada
-        executando = manipulador_entrada.processar_eventos(foguete, camera)
+        executando = manipulador_entrada.processar_eventos(foguete, camera, corpos)
+
+        # Atualiza os controles
+        manipulador_entrada.atualizar_controles(foguete, camera)
 
         # Verifica se a simulação está pausada
         simulacao_pausada = manipulador_entrada.esta_pausado()
